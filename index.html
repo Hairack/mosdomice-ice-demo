@@ -209,27 +209,27 @@ const PRODUCTS = [
   {id:"lump",  name:"Кусковой лёд",           order:"Кускового льда", unit:"кг", price:50,  from:false, img:"lump",
    sum:"Плотный прозрачный кубик весом около 18 г. Базовый лёд для бара, зала и витрины.",
    details:["Льдогенераторы BREMA, кубик ~18 г","Долго тает — не разбавляет напиток","Фасовка от 1 кг, опт от паллеты"],
-   def:30, step:5},
+   def:30, step:10},
   {id:"frappe",name:"Фраппе (колотый)",       order:"Фраппе",         unit:"кг", price:50,  from:false, img:"frappe",
    sum:"Колотый лёд для коктейлей, кальяна и ведёрных подач.",
    details:["Мелкая и средняя фракция","Для шейкеров, кальянов, ведёрных подач","Всегда в наличии, отгрузка в день заказа"],
-   def:20, step:5},
+   def:20, step:10},
   {id:"flake", name:"Чешуйчатый лёд (флейк)", order:"Чешуйчатого",    unit:"кг", price:40,  from:false, img:"flake",
    sum:"Пластинки неправильной формы — для выкладки рыбы, мяса и витрин.",
    details:["Плотно облегает продукт","Выкладка рыбы, мяса, овощей, морепродуктов","Опт и розница"],
-   def:20, step:5},
+   def:20, step:10},
   {id:"cups",  name:"Лёд в стаканчиках",      order:"Стаканчиков",    unit:"шт", price:60,  from:false, img:"cups",
    sum:"Порционный лёд 200 г в пластиковом стаканчике, запаян мембраной. Розничная фасовка.",
    details:["Вес льда в стаканчике — 200 г","Запаяны мембраной, готовы к полке","Для магазинов, сетей и гипермаркетов"],
-   def:10, step:10},
+   def:20, step:20},
   {id:"craft", name:"Крафтовый лёд",          order:"Крафтового",     unit:"шт", price:30,  from:true,  img:"craft",
    sum:"Кубы, бруски и блоки под ваш размер, ледяные формы для эффектной подачи.",
    details:["Изготовление под размер бара","Заказ на изготовление — за 3–5 дней","Точную цену подтверждает менеджер"],
-   def:10, step:10},
+   def:10, step:1},
   {id:"dry",   name:"Сухой лёд (гранулы)",    order:"Сухого",         unit:"кг", price:200, from:false, img:"dry",
    sum:"Твёрдая фракция CO₂: эффекты, дым, технологическое охлаждение. Выпускаем под заказ.",
    details:["Гранулы ~3 / 9 / 16 мм","Блоки 0,5–2 кг — по запросу","Дополнительное направление, под заказ"],
-   def:10, step:5}
+   def:10, step:10}
 ];
 
 const state = {
@@ -237,7 +237,7 @@ const state = {
   qty: {},
   date: new Date().toISOString().slice(0,10),
   from: "10:00", to: "17:00",
-  address: "", phone: "", comment: "",
+  address: "", phone: "", comment: "", km: 0, coords: null, kmStatus: "",
   expanded: {},
   settings: { token: "", chat: "618738", group: "https://t.me/+bvhE6LtSO1Q2NGI6" }
 };
@@ -251,12 +251,48 @@ function lines(){ return PRODUCTS.filter(p => (state.qty[p.id]||0) > 0).map(p =>
 function total(){ return lines().reduce((s,l) => s + (l.p.from ? 0 : l.q * l.p.price), 0); }
 function weight(){ return lines().filter(l => l.p.unit === "кг").reduce((s,l) => s + l.q, 0); }
 function negotiable(){ return lines().some(l => l.p.from); }
+/* --- геозона МКАД (данные OpenStreetMap) --- */
+const MKAD = [[55.749436, 37.842338], [55.771452, 37.843494], [55.815197, 37.838881], [55.820097, 37.837933], [55.822589, 37.83674], [55.825975, 37.833954], [55.828954, 37.829979], [55.879604, 37.731852], [55.892545, 37.70501], [55.894645, 37.694309], [55.895718, 37.662863], [55.898254, 37.637862], [55.901478, 37.620504], [55.909568, 37.590155], [55.911003, 37.58096], [55.910876, 37.571444], [55.907097, 37.536014], [55.905865, 37.529021], [55.903205, 37.52139], [55.888326, 37.486792], [55.883453, 37.466949], [55.882635, 37.451026], [55.881583, 37.444225], [55.873275, 37.417594], [55.868463, 37.407317], [55.86464, 37.402193], [55.860503, 37.398413], [55.848217, 37.391821], [55.845112, 37.391917], [55.839246, 37.395207], [55.835445, 37.395783], [55.823687, 37.392865], [55.807061, 37.387498], [55.801963, 37.3843], [55.789096, 37.372093], [55.785709, 37.370279], [55.782664, 37.369668], [55.750289, 37.368812], [55.746448, 37.369413], [55.714061, 37.385477], [55.708722, 37.389615], [55.692041, 37.411671], [55.689037, 37.413927], [55.682436, 37.416872], [55.664987, 37.429926], [55.660137, 37.434362], [55.600192, 37.504547], [55.597093, 37.509479], [55.594041, 37.517948], [55.577138, 37.588546], [55.575926, 37.596551], [55.571842, 37.666604], [55.572248, 37.674698], [55.573925, 37.682762], [55.587687, 37.719948], [55.602089, 37.754037], [55.624405, 37.795321], [55.649004, 37.83285], [55.654276, 37.838054], [55.657141, 37.839388], [55.661313, 37.839905], [55.664798, 37.839112], [55.687942, 37.830431], [55.694758, 37.82959], [55.6996, 37.830848], [55.715513, 37.838741], [55.742133, 37.842008], [55.749436, 37.842338]];
+function insideMKAD(lat, lon){
+  let inside = false;
+  for (let i = 0, j = MKAD.length - 1; i < MKAD.length; j = i++){
+    const yi = MKAD[i][0], xi = MKAD[i][1], yj = MKAD[j][0], xj = MKAD[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function segKm(lat, lon, la1, lo1, la2, lo2){
+  const latRef = (la1 + la2) / 2;
+  const kx = 111.320 * Math.cos(latRef * Math.PI / 180), ky = 110.574;
+  const px = (lon - lo1) * kx, py = (lat - la1) * ky;
+  const bx = (lo2 - lo1) * kx, by = (la2 - la1) * ky;
+  const l2 = bx * bx + by * by;
+  let t = l2 === 0 ? 0 : (px * bx + py * by) / l2;
+  t = Math.min(1, Math.max(0, t));
+  return Math.hypot(px - t * bx, py - t * by);
+}
+/* километры от МКАД: 0 — в пределах кольца */
+function outsideKm(lat, lon){
+  if (lat == null || lon == null) return 0;
+  if (insideMKAD(lat, lon)) return 0;
+  let best = Infinity;
+  for (let i = 0, j = MKAD.length - 1; i < MKAD.length; j = i++)
+    best = Math.min(best, segKm(lat, lon, MKAD[j][0], MKAD[j][1], MKAD[i][0], MKAD[i][1]));
+  return Math.max(1, Math.ceil(best));
+}
+const FREE_TOTAL = 5000, MKAD_PRICE = 1000, KM_PRICE = 100;
+/* доставка: до 5 000 ₽ — 1 000 ₽ по МКАД, за МКАД +100 ₽/км */
+function deliveryCost(){
+  if (!lines().length) return 0;
+  let cost = total() < FREE_TOTAL ? MKAD_PRICE : 0;
+  cost += state.km * KM_PRICE;
+  return cost;
+}
 function deliveryNote(){
-  const L = lines(); if(!L.length) return "";
-  const dryOnly = L.every(l => l.p.id === "dry");
-  const th = dryOnly ? 20 : 100;
-  return weight() >= th ? "Доставка по МКАД бесплатно"
-                        : "Доставка: мелкий заказ — 1 000 ₽, за МКАД +100 ₽/км";
+  if (!lines().length) return "";
+  const parts = [total() < FREE_TOTAL ? "заказ до 5 000 ₽ — доставка по МКАД 1 000 ₽" : "доставка по МКАД бесплатно"];
+  if (state.km > 0) parts.push("за МКАД +100 ₽/км (примерно " + smart(state.km) + " км)");
+  return "Доставка: " + parts.join(", ");
 }
 function fmtDate(){
   const [y,m,d] = state.date.split("-");
@@ -275,7 +311,9 @@ function orderText(){
   if (state.phone.trim()) out.push("Телефон принимающего: " + state.phone.trim());
   if (state.comment.trim()) out.push("Комментарий: " + state.comment.trim());
   out.push("");
-  out.push("Сумма к заказу (без доставки): " + fmtInt(total()) + " ₽");
+  out.push("Сумма по позициям: " + fmtInt(total()) + " ₽");
+  out.push("Доставка: " + fmtInt(deliveryCost()) + " ₽");
+  out.push("Итого: " + fmtInt(total() + deliveryCost()) + " ₽");
   if (negotiable()) out.push("Крафтовый лёд — цена по запросу, менеджер подтвердит.");
   if (deliveryNote()) out.push(deliveryNote());
   out.push("Заказ из приложения MosDomIce");
@@ -354,6 +392,15 @@ function viewCatalog(){
   return parts.join("");
 }
 
+/* подсказка о положении адреса относительно МКАД */
+function kmHint(){
+  if (state.kmStatus === "search") return '<div class="note">Ищем адрес на карте…</div>';
+  if (state.kmStatus === "fail") return '<div class="note">Не удалось определить адрес. Уточните улицу, дом и город.</div>';
+  if (state.km > 0) return '<div class="note">Адрес за МКАД: ' + smart(state.km) + ' км — к доставке + ' + fmtInt(state.km * KM_PRICE) + ' ₽</div>';
+  if (state.kmStatus === "ok") return '<div class="note">Адрес в пределах МКАД</div>';
+  return "";
+}
+
 function viewOrder(){
   if (!lines().length){
     return `<div class="empty"><div class="cube">◇</div>
@@ -387,6 +434,10 @@ function viewOrder(){
       </div>
       <div class="field"><span class="ico">◉</span>
         <input id="f-address" placeholder="Адрес доставки" value="${state.address}"></div>
+      <div class="two" style="margin-bottom:6px">
+        <button class="btn3" id="locate" style="margin-top:0">Определить по карте</button>
+      </div>
+      ${kmHint()}
       <div class="field"><span class="ico">✆</span>
         <input id="f-phone" placeholder="Телефон принимающего" value="${state.phone}"></div>
       <div class="field" style="margin-bottom:0"><span class="ico">▤</span>
@@ -394,15 +445,13 @@ function viewOrder(){
     </div>
 
     <div class="sec"><h4>Итог</h4>
-      <div class="total"><span>Сумма заказа</span><b>${fmtInt(total())} ₽</b></div>
+      <div class="total"><span>Сумма по позициям</span><b>${fmtInt(total())} ₽</b></div>
+      <div class="total"><span>Доставка</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
+      <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
+        <span style="font-weight:600">Итого</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
-      <button class="btn" id="send">Отправить заказ в Telegram</button>
-      <button class="btn2" id="share">Отправить в группу заявок</button>
+      <button class="btn" id="send">Отправить заказ в группу</button>
       <button class="btn3" id="open-group">Открыть группу заявок</button>
-      <div class="duo">
-        <button id="copy">Скопировать текст</button>
-        <button id="group">Группа заявок</button>
-      </div>
       <button class="link" id="preview">Посмотреть текст заказа</button>
     </div>`;
 }
@@ -512,6 +561,8 @@ document.addEventListener("click", e => {
 
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
 
+  if (t.closest("#locate")){ locateAddress(); return; }
+
   if (t.closest("#preview")){
     showText(); return;
   }
@@ -545,6 +596,26 @@ function showText(){
     copyText(); toast("Текст заказа скопирован", "Отправьте его в группу заявок.");
   };
   document.getElementById("back").onclick = () => { state.tab = 1; render(); };
+}
+
+/* определение адреса по карте: OpenStreetMap Nominatim + геозона МКАД */
+async function locateAddress(){
+  const q = state.address.trim();
+  if (q.length < 5){ toast("Укажите адрес", "Введите улицу, дом и город."); return; }
+  state.kmStatus = "search"; render();
+  try {
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(q);
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    const list = await res.json();
+    if (!list.length){ state.kmStatus = "fail"; state.km = 0; render(); return; }
+    const lat = parseFloat(list[0].lat), lon = parseFloat(list[0].lon);
+    state.coords = [lat, lon];
+    state.km = outsideKm(lat, lon);
+    state.kmStatus = "ok";
+  } catch (_) {
+    state.kmStatus = "fail"; state.km = 0;
+  }
+  render();
 }
 
 /* поля ввода сохраняются при перерисовке */
