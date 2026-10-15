@@ -29,7 +29,12 @@ body{
                    linear-gradient(155deg,#0a1c30,#0c2138 45%,#08131f);
 }
 .status{display:flex;justify-content:space-between;padding:10px 24px 0;font-size:11px;font-weight:600;color:#eaf4ff}
-.top{padding:9px 18px 10px;text-align:center;font-size:15px;font-weight:600}
+.top{padding:9px 18px 2px;text-align:center;font-size:15px;font-weight:600}
+.hdr{display:flex;gap:8px;align-items:center;padding:5px 12px 9px;border-bottom:1px solid var(--line)}
+.hdr a{font-size:10px;font-weight:600;text-decoration:none;padding:7px 11px;border-radius:20px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr .tel{background:rgba(255,255,255,.10);color:#fff}
+.hdr .site{background:rgba(140,212,242,.20);color:var(--ice-soft);margin-left:auto}
 .scroll{flex:1;overflow-y:auto;padding:0 12px 14px;scrollbar-width:none}
 .scroll::-webkit-scrollbar{display:none}
 .lead{padding:4px 3px 12px}
@@ -120,6 +125,26 @@ input[type=date]{color-scheme:dark}
 .crow b{font-size:12px;font-weight:500;display:block}
 .crow span{color:rgba(255,255,255,.55);font-size:8.5px}
 .crow .chev{color:rgba(255,255,255,.3);font-size:11px;margin-left:auto}
+.map{position:relative;height:132px;border-radius:14px;overflow:hidden;margin-bottom:11px;
+     background:linear-gradient(160deg,#0f2b45,#123a5c 50%,#0d2438)}
+.map .grid{position:absolute;inset:0;opacity:.30;
+  background-image:linear-gradient(rgba(140,212,242,.5) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(140,212,242,.5) 1px,transparent 1px);
+  background-size:26px 26px;transform:rotate(-8deg) scale(1.25)}
+.map .river{position:absolute;left:-10%;right:-10%;top:56%;height:20px;transform:rotate(-9deg);
+  background:rgba(70,150,215,.45);filter:blur(1px)}
+.map .road{position:absolute;left:-10%;right:-10%;top:26%;height:7px;transform:rotate(-9deg);
+  background:rgba(190,220,240,.35)}
+.map .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);text-align:center}
+.map .pin .dot{width:30px;height:30px;border-radius:50%;background:#0a1c30;border:2px solid var(--ice);
+  display:flex;align-items:center;justify-content:center;color:var(--ice);font-size:14px;margin:0 auto}
+.map .pin b{display:block;margin-top:5px;font-size:9.5px;background:rgba(5,11,19,.85);
+  border:1px solid rgba(140,212,242,.45);border-radius:9px;padding:2px 7px;white-space:nowrap}
+.map .lbl{position:absolute;left:8px;bottom:7px;color:rgba(255,255,255,.45);font-size:8px}
+.route{display:flex;align-items:center;gap:9px;background:var(--ice);color:#08151f;font-weight:700;
+  font-size:12.5px;border:none;width:100%;padding:13px;border-radius:14px;cursor:pointer;
+  font-family:inherit;text-decoration:none}
+.route .chev{margin-left:auto;font-weight:600;opacity:.6}
 .about{color:rgba(255,255,255,.72);font-size:10.5px;line-height:1.55}
 .about b{color:#fff;font-size:12.5px;display:block;margin-bottom:5px;font-weight:600}
 .ver{color:rgba(255,255,255,.42);font-size:9.5px;margin-top:8px}
@@ -156,11 +181,16 @@ input[type=date]{color-scheme:dark}
     <div class="device"><div class="screen">
       <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
       <div class="top" id="title">Калькулятор льда</div>
+      <div class="hdr">
+        <a class="tel" href="tel:+74954113996">&#9990; +7 (495) 411-39-96</a>
+        <a class="site" href="https://mosdomice.com" target="_blank">&#9678; mosdomice.com</a>
+      </div>
       <div class="scroll" id="view"></div>
       <div class="tabs">
         <button class="tab on" data-tab="0"><i>◇</i>Калькулятор</button>
         <button class="tab" data-tab="1"><i>▤</i>Заказ<span class="badge" id="badge">0</span></button>
         <button class="tab" data-tab="2"><i>⚙</i>Настройки</button>
+        <button class="tab" data-tab="3"><i>◉</i>Контакты</button>
       </div>
       <div class="toast" id="toast"></div>
     </div></div>
@@ -265,7 +295,7 @@ function toast(title, text){
 /* --- отрисовка --- */
 function render(){
   const v = document.getElementById("view");
-  const titles = ["Калькулятор льда", "Заказ", "Настройки"];
+  const titles = ["Калькулятор льда", "Заказ", "Настройки", "Контакты"];
   document.getElementById("title").textContent = titles[state.tab];
 
   const cnt = lines().length;
@@ -278,7 +308,9 @@ function render(){
 
   if (state.tab === 0) v.innerHTML = viewCatalog();
   else if (state.tab === 1) v.innerHTML = viewOrder();
-  else v.innerHTML = viewSettings();
+  else if (state.tab === 2) v.innerHTML = viewSettings();
+  else v.innerHTML = viewContacts();
+  v.scrollTop = 0;
 }
 
 function viewCatalog(){
@@ -412,6 +444,46 @@ function viewSettings(){
         Москва, ул. Угрешская, д. 2, стр. 15, оф. 117<br>
         Производство и доставка пищевого льда по Москве и МО. Работаем 24/7.
         <div class="ver">Версия приложения 1.0</div></div>
+    </div>`;
+}
+
+function viewContacts(){
+  return `
+    <div class="sec" style="padding:11px">
+      <div class="map">
+        <div class="grid"></div><div class="road"></div><div class="river"></div>
+        <div class="pin"><div class="dot">*</div><b>Склад MosDomIce</b></div>
+        <div class="lbl">Яндекс Карты · Угрешская, 2, стр. 15</div>
+      </div>
+      <a class="route" href="yandexnavi://build_route_on_map?lat_to=55.711832&lon_to=37.686781">Открыть в навигаторе<span class="chev">›</span></a>
+    </div>
+
+    <div class="sec"><h4>Адрес склада</h4>
+      <div class="about" style="font-size:12px;color:#fff">109089, Москва, ул. Угрешская, д. 2, стр. 15, оф. 117</div>
+      <p style="margin-top:6px"><a href="https://maps.apple.com/?q=55.711832,37.686781&ll=55.711832,37.686781" target="_blank" style="color:var(--ice);font-size:10.5px;font-weight:600;text-decoration:none">Показать на карте ›</a></p>
+      <div class="crow"><span class="ico">◔</span><div><b>Круглосуточно, 7 дней в неделю</b><span>Режим работы</span></div></div>
+      <div class="crow"><span class="ico">◈</span><div><b>м. Кожуховская</b><span>Ближайшее метро</span></div></div>
+    </div>
+
+    <div class="sec"><h4>Телефоны</h4>
+      <a class="crow" href="tel:+74954113996"><span class="ico">✆</span><div><b>+7 (495) 411-39-96</b><span>Отдел заказов</span></div><span class="chev">›</span></a>
+      <a class="crow" href="tel:+79854113996"><span class="ico">✆</span><div><b>+7 (985) 411-39-96</b><span>Мобильный</span></div><span class="chev">›</span></a>
+      <a class="crow" href="tel:+79663403996"><span class="ico">✆</span><div><b>+7 (966) 340-39-96</b><span>Дополнительный</span></div><span class="chev">›</span></a>
+    </div>
+
+    <div class="sec"><h4>Написать нам</h4>
+      <a class="crow" href="https://t.me/MosDomBar" target="_blank"><span class="ico">➤</span><div><b>@MosDomBar</b><span>Telegram</span></div><span class="chev">›</span></a>
+      <a class="crow" href="https://mosdomice.com" target="_blank"><span class="ico">◍</span><div><b>mosdomice.com</b><span>Сайт</span></div><span class="chev">›</span></a>
+      <a class="crow" href="mailto:mosdombar@gmail.com"><span class="ico">✉</span><div><b>mosdombar@gmail.com</b><span>Почта</span></div><span class="chev">›</span></a>
+      <a class="crow" href="https://vk.ru/dostavkalda" target="_blank"><span class="ico">◍</span><div><b>vk.ru/dostavkalda</b><span>ВКонтакте</span></div><span class="chev">›</span></a>
+      <a class="crow" href="${state.settings.group}" target="_blank"><span class="ico">◆</span><div><b>Открыть в Telegram</b><span>Группа заявок</span></div><span class="chev">›</span></a>
+    </div>
+
+    <div class="sec"><h4>Реквизиты</h4>
+      <div class="about"><b>ООО «Мир бармена»</b>
+        ИНН 7720650439 · ОГРН 1207700493076<br>
+        Производство и доставка пищевого льда по Москве и МО.
+        <div class="ver">Московский Дом Бармена (MosDomIce)</div></div>
     </div>`;
 }
 
