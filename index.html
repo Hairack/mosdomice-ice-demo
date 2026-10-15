@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Лёд MosDomIce — эмулятор приложения</title>
 <style>
 :root{
@@ -169,6 +172,7 @@ input[type=date]{color-scheme:dark}
 .toast b{display:block;font-size:12px;margin-bottom:3px}
 .tip{max-width:1180px;color:rgba(255,255,255,.5);font-size:11.5px;line-height:1.6;text-align:center}
 .tip b{color:rgba(255,255,255,.8)}
+.verline{color:var(--ice);font-size:11px;font-weight:700;letter-spacing:.4px;margin-bottom:8px}
 </style></head><body>
 
 <div class="head">
@@ -198,7 +202,8 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <div class="tip">
-  <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ»,
+  <div class="verline" id="version">версия от <b id="ver">15.10.2026 22:26</b></div>
+  <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
 </div>
