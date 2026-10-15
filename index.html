@@ -94,6 +94,8 @@ body{
 .field .ico{color:var(--ice);font-size:11px;flex:none}
 .two{display:flex;gap:8px;margin-bottom:8px}
 .two label{flex:1;display:block}
+.mini-btn{background:rgba(140,212,242,.20);color:var(--ice-soft);border:none;border-radius:20px;
+  padding:6px 10px;font-size:9.5px;font-weight:700;cursor:pointer;font-family:inherit;flex:none;white-space:nowrap}
 .mini{color:rgba(255,255,255,.55);font-size:8.5px;margin-bottom:3px;display:block}
 .box{background:rgba(255,255,255,.08);border-radius:11px;padding:8px 10px}
 .box input{background:none;border:none;outline:none;color:#fff;font-size:12px;width:100%;font-family:inherit}
@@ -202,7 +204,7 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">15.10.2026 22:26</b></div>
+  <div class="verline" id="version">версия от <b id="ver">15.10.2026 22:33</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
@@ -393,9 +395,9 @@ function orderText(){
   if (state.phone.trim()) out.push("Телефон принимающего: " + state.phone.trim());
   if (state.comment.trim()) out.push("Комментарий: " + state.comment.trim());
   out.push("");
-  out.push("Сумма по позициям: " + fmtInt(total()) + " ₽");
-  out.push("Доставка: " + fmtInt(deliveryCost()) + " ₽");
-  out.push("Итого: " + fmtInt(total() + deliveryCost()) + " ₽");
+  out.push("Сумма за лёд: " + fmtInt(total()) + " ₽");
+  out.push("Стоимость доставки: " + fmtInt(deliveryCost()) + " ₽");
+  out.push("Итого к оплате: " + fmtInt(total() + deliveryCost()) + " ₽");
   if (negotiable()) out.push("Крафтовый лёд — цена по запросу, менеджер подтвердит.");
   if (deliveryNote()) out.push(deliveryNote());
   out.push("Заказ из приложения MosDomIce");
@@ -516,7 +518,8 @@ function viewOrder(){
       </div>
       ${scheduleHint() ? '<div class="note">' + scheduleHint() + '</div>' : ""}
       <div class="field"><span class="ico">◉</span>
-        <input id="f-address" placeholder="Адрес доставки" value="${state.address}">${state.kmStatus === "search" ? '<span class="ico">…</span>' : ""}</div>
+        <input id="f-address" placeholder="Адрес доставки" value="${state.address}">
+        <button class="mini-btn" id="geo">Я здесь</button></div>
       ${kmHint()}
       <div class="field"><span class="ico">✆</span>
         <input id="f-phone" type="tel" inputmode="tel" maxlength="18" placeholder="+7 (___) ___-__-__" value="${state.phone}"></div>
@@ -525,10 +528,10 @@ function viewOrder(){
     </div>
 
     <div class="sec"><h4>Итог</h4>
-      <div class="total"><span>Сумма по позициям</span><b>${fmtInt(total())} ₽</b></div>
-      <div class="total"><span>Доставка</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
+      <div class="total"><span>Сумма за лёд</span><b>${fmtInt(total())} ₽</b></div>
+      <div class="total"><span>Стоимость доставки</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
-        <span style="font-weight:600">Итого</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
+        <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
       <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Просто заказать</button>
       <button class="link" id="preview">Посмотреть текст заказа</button>
@@ -599,6 +602,7 @@ document.addEventListener("click", e => {
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
 
 
+  if (t.closest("#geo")){ locateMe(); return; }
   if (t.closest("#preview")){
     showText(); return;
   }
@@ -630,6 +634,39 @@ function showText(){
 }
 
 let locateTimer;
+/* «Я здесь»: координаты устройства -> адрес и километраж */
+function locateMe(){
+  if (!navigator.geolocation){
+    toast("Геопозиция недоступна", "Введите адрес вручную — он определится сам.");
+    return;
+  }
+  state.kmStatus = "search"; render();
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    state.coords = [lat, lon];
+    state.km = outsideKm(lat, lon);
+    try {
+      const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lat + "&lon=" + lon + "&accept-language=ru";
+      const res = await fetch(url, { headers: { "Accept": "application/json" } });
+      const j = await res.json();
+      const a = j.address || {};
+      const city = a.city || a.town || a.village || a.state || "";
+      const street = a.road || a.pedestrian || "";
+      const house = a.house_number ? ", " + a.house_number : "";
+      const line = [city, street + house].filter(Boolean).join(", ");
+      if (line) state.address = line;
+      state.kmStatus = "ok";
+    } catch (_) {
+      state.kmStatus = "ok";
+    }
+    render();
+  }, err => {
+    state.kmStatus = "fail";
+    render();
+    toast("Нет доступа к геопозиции", "Разрешите доступ в браузере или введите адрес вручную.");
+  }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
 /* определение адреса по карте: OpenStreetMap Nominatim + геозона МКАД */
 async function locateAddress(){
   const q = state.address.trim();
