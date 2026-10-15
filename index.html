@@ -204,7 +204,7 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">15.10.2026 22:33</b></div>
+  <div class="verline" id="version">версия от <b id="ver">15.10.2026 22:49</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
@@ -588,7 +588,7 @@ document.addEventListener("click", e => {
     const p = PRODUCTS.find(x => x.id === step.dataset.step);
     const dir = Number(step.dataset.dir);
     const cur = state.qty[p.id] || 0;
-    let next = cur === 0 ? (dir > 0 ? p.def : 0) : cur + dir * p.step;
+    let next = cur + dir * p.step;
     if (next <= 0){ delete state.qty[p.id]; } else { state.qty[p.id] = next; }
     render(); return;
   }
