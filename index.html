@@ -238,7 +238,6 @@ const state = {
   from: "10:00", to: "17:00",
   address: "", phone: "", comment: "", km: 0, coords: null, kmStatus: "",
   expanded: {},
-  settings: { group: "https://t.me/+bvhE6LtSO1Q2NGI6" }
 };
 
 /* --- расчёты --- */
@@ -448,8 +447,7 @@ function viewOrder(){
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
         <span style="font-weight:600">Итого</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
-      <button class="btn" id="send">Отправить заказ в группу</button>
-      <button class="btn3" id="open-group">Открыть группу заявок</button>
+      <button class="btn" id="send">Отправить заказ</button>
       <button class="link" id="preview">Посмотреть текст заказа</button>
     </div>`;
 }
@@ -482,7 +480,6 @@ function viewContacts(){
       <a class="crow" href="https://mosdomice.com" target="_blank"><span class="ico">◍</span><div><b>mosdomice.com</b><span>Сайт</span></div><span class="chev">›</span></a>
       <a class="crow" href="mailto:mosdombar@gmail.com"><span class="ico">✉</span><div><b>mosdombar@gmail.com</b><span>Почта</span></div><span class="chev">›</span></a>
       <a class="crow" href="https://vk.ru/dostavkalda" target="_blank"><span class="ico">◍</span><div><b>vk.ru/dostavkalda</b><span>ВКонтакте</span></div><span class="chev">›</span></a>
-      <a class="crow" href="${state.settings.group}" target="_blank"><span class="ico">◆</span><div><b>Открыть в Telegram</b><span>Группа заявок</span></div><span class="chev">›</span></a>
     </div>
 
     <div class="sec"><h4>Реквизиты</h4>
@@ -524,12 +521,7 @@ document.addEventListener("click", e => {
     showText(); return;
   }
   if (t.closest("#send") || t.closest("#share") || t.closest("#copy")){
-    copyText(); toast("Текст заказа скопирован", "В приложении на iPhone откроется Telegram с этим сообщением.");
-    return;
-  }
-  if (t.closest("#open-group") || t.closest("#group")){
-    copyText();
-    toast("Текст заказа скопирован", "В приложении на iPhone откроется группа заявок — останется вставить текст.");
+    copyText(); toast("Заказ отправлен", "В приложении заказ уходит менеджеру одним нажатием.");
     return;
   }
 });
@@ -550,7 +542,7 @@ function showText(){
     <button class="btn" id="copy2" style="margin-top:12px">Скопировать текст</button>
     <button class="btn2" id="back">← Вернуться к заказу</button>`;
   document.getElementById("copy2").onclick = () => {
-    copyText(); toast("Текст заказа скопирован", "Отправьте его в группу заявок.");
+    copyText(); toast("Текст заказа скопирован", "Так заказ увидит менеджер.");
   };
   document.getElementById("back").onclick = () => { state.tab = 1; render(); };
 }
