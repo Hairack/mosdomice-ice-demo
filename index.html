@@ -100,6 +100,7 @@ input[type=date]{color-scheme:dark}
 .total b{font-size:20px;font-weight:700}
 .note{display:flex;gap:7px;color:rgba(255,255,255,.7);font-size:10.5px;line-height:1.45;margin-bottom:9px}
 .note::before{content:"▤";color:var(--ice);font-size:10px}
+.btn.off{opacity:.45;cursor:default}
 .btn{width:100%;background:var(--ice);color:#08151f;font-weight:700;font-size:13.5px;text-align:center;
      padding:14px;border-radius:14px;border:none;cursor:pointer;font-family:inherit;margin-top:2px}
 .btn2{width:100%;background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:13px;text-align:center;
@@ -296,6 +297,84 @@ function fmtDate(){
   const [y,m,d] = state.date.split("-");
   return d && m && y ? `${d}.${m}.${y}` : state.date;
 }
+/* доставка не раньше чем через 4 часа от момента заявки */
+const MIN_LEAD_MIN = 240;   // доставка не раньше чем через 4 часа
+const MIN_INTERVAL = 180;   // интервал доставки не меньше 3 часов
+function earliestStart(){
+  const d = new Date();
+  const cur = d.getHours() * 60 + d.getMinutes();
+  return Math.ceil((cur + MIN_LEAD_MIN) / 30) * 30;
+}
+function timeSlots(){
+  const today = state.date === new Date().toISOString().slice(0, 10);
+  const first = today ? earliestStart() : 0;
+  const out = [];
+  for (let m = Math.max(0, first); m <= 23 * 60 + 30; m += 30)
+    out.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
+  return out;
+}
+/* время окончания: минимум на 3 часа позже начала */
+function endSlots(){
+  const slots = timeSlots();
+  if (!slots.length) return [];
+  const idx = slots.indexOf(state.from);
+  if (idx < 0) return [];
+  const startMin = Number(state.from.slice(0,2)) * 60 + Number(state.from.slice(3));
+  const out = [];
+  for (let m = Math.ceil((startMin + MIN_INTERVAL) / 30) * 30; m <= 23 * 60 + 30; m += 30)
+    out.push(String(Math.floor(m/60)).padStart(2,"0") + ":" + String(m%60).padStart(2,"0"));
+  return out;
+}
+function minutes(t){ return t ? Number(t.slice(0,2)) * 60 + Number(t.slice(3)) : NaN; }
+
+function scheduleHint(){
+  const slots = timeSlots();
+  if (!slots.length) return "На сегодня свободных интервалов больше нет — доставка возможна минимум через 4 часа. Выберите завтрашний день.";
+  if (state.date < new Date().toISOString().slice(0, 10)) return "Дата доставки уже прошла — выберите сегодняшний или более поздний день.";
+  const a = state.from, b = state.to;
+  if (a && a < slots[0]) return "Доставку оформляют минимум за 4 часа. На сегодня доступно время с " + slots[0] + ".";
+  if (a && b) {
+    if (b <= a) return "Время «до» должно быть позже времени «с».";
+    if (minutes(b) - minutes(a) < MIN_INTERVAL) return "Интервал доставки — не меньше 3 часов. Увеличьте время «до».";
+  }
+  return "";
+}
+function scheduleOk(){
+  const slots = timeSlots();
+  if (!slots.length) return false;
+  if (state.date < new Date().toISOString().slice(0, 10)) return false;
+  if (!state.from || !state.to) return false;
+  if (state.from < slots[0]) return false;
+  if (minutes(state.to) - minutes(state.from) < MIN_INTERVAL) return false;
+  return true;
+}
+/* если на сегодня слотов нет — переносим на завтра и подставляем ближайшее время */
+function normalizeSchedule(){
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.date === today && !timeSlots().length){
+    const t = new Date(Date.now() + 86400000);
+    state.date = t.toISOString().slice(0, 10);
+  }
+  const slots = timeSlots();
+  if (slots.length && !slots.includes(state.from)) state.from = slots[0];
+  const ends = endSlots();
+  if (ends.length && !ends.includes(state.to)) state.to = ends[0];
+}
+
+/* маска телефона: 8926... -> +7 (926) ...-..-.. */
+function maskPhone(input){
+  let d = String(input).replace(/\D/g, "");
+  if (!d) return "";
+  if (d[0] === "8" || d[0] === "7") d = d.slice(1);
+  d = d.slice(0, 10);
+  let out = "+7";
+  if (d.length) out += " (" + d.slice(0, 3);
+  if (d.length > 3) out += ") " + d.slice(3, 6);
+  if (d.length > 6) out += "-" + d.slice(6, 8);
+  if (d.length > 8) out += "-" + d.slice(8, 10);
+  return out;
+}
+
 function orderText(){
   const out = [];
   out.push("Дата: " + fmtDate());
@@ -399,6 +478,7 @@ function kmHint(){
 }
 
 function viewOrder(){
+  normalizeSchedule();
   if (!lines().length){
     return `<div class="empty"><div class="cube">◇</div>
       <h3>Заказ пока пуст</h3>
@@ -422,21 +502,19 @@ function viewOrder(){
       <button class="clear" data-clear>Очистить заказ</button></div>
 
     <div class="sec"><h4>Доставка</h4>
-      <div class="field"><span class="ico">▦</span><input type="date" id="f-date" value="${state.date}"></div>
+      <div class="field"><span class="ico">▦</span><input type="date" id="f-date" min="${new Date().toISOString().slice(0,10)}" value="${state.date}"></div>
       <div class="two">
         <label><span class="mini">Время с</span>
-          <div class="box"><input id="f-from" value="${state.from}" placeholder="00:00"></div></label>
+          <div class="box"><select id="f-from">${timeSlots().map(t => `<option${t === state.from ? " selected" : ""}>${t}</option>`).join("")}</select></div></label>
         <label><span class="mini">до</span>
-          <div class="box"><input id="f-to" value="${state.to}" placeholder="00:00"></div></label>
+          <div class="box"><select id="f-to">${endSlots().map(t => `<option${t === state.to ? " selected" : ""}>${t}</option>`).join("")}</select></div></label>
       </div>
+      ${scheduleHint() ? '<div class="note">' + scheduleHint() + '</div>' : ""}
       <div class="field"><span class="ico">◉</span>
-        <input id="f-address" placeholder="Адрес доставки" value="${state.address}"></div>
-      <div class="two" style="margin-bottom:6px">
-        <button class="btn3" id="locate" style="margin-top:0">Определить по карте</button>
-      </div>
+        <input id="f-address" placeholder="Адрес доставки" value="${state.address}">${state.kmStatus === "search" ? '<span class="ico">…</span>' : ""}</div>
       ${kmHint()}
       <div class="field"><span class="ico">✆</span>
-        <input id="f-phone" placeholder="Телефон принимающего" value="${state.phone}"></div>
+        <input id="f-phone" type="tel" inputmode="tel" maxlength="18" placeholder="+7 (___) ___-__-__" value="${state.phone}"></div>
       <div class="field" style="margin-bottom:0"><span class="ico">▤</span>
         <input id="f-comment" placeholder="Комментарий (домофон, этаж, пожелания)" value="${state.comment}"></div>
     </div>
@@ -447,7 +525,7 @@ function viewOrder(){
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
         <span style="font-weight:600">Итого</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
-      <button class="btn" id="send">Просто заказать</button>
+      <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Просто заказать</button>
       <button class="link" id="preview">Посмотреть текст заказа</button>
     </div>`;
 }
@@ -515,7 +593,6 @@ document.addEventListener("click", e => {
 
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
 
-  if (t.closest("#locate")){ locateAddress(); return; }
 
   if (t.closest("#preview")){
     showText(); return;
@@ -547,6 +624,7 @@ function showText(){
   document.getElementById("back").onclick = () => { state.tab = 1; render(); };
 }
 
+let locateTimer;
 /* определение адреса по карте: OpenStreetMap Nominatim + геозона МКАД */
 async function locateAddress(){
   const q = state.address.trim();
@@ -574,13 +652,25 @@ document.addEventListener("input", e => {
   if (id === "f-date") state.date = val;
   else if (id === "f-from") state.from = val;
   else if (id === "f-to") state.to = val;
-  else if (id === "f-address") state.address = val;
-  else if (id === "f-phone") state.phone = val;
+  else if (id === "f-address") {
+    state.address = val;
+    // адрес определяется сам: ждём паузу после ввода и считаем доставку
+    clearTimeout(locateTimer);
+    locateTimer = setTimeout(() => { locateAddress(); }, 1200);
+  }
+  else if (id === "f-phone") {
+    const masked = maskPhone(val);
+    state.phone = masked;
+    if (masked !== val) e.target.value = masked;
+  }
   else if (id === "f-comment") state.comment = val;
 });
 
 /* живое обновление итога, когда меняются данные доставки */
 document.addEventListener("change", e => {
+  if (e.target.id === "f-date") state.date = e.target.value;
+  else if (e.target.id === "f-from") state.from = e.target.value;
+  else if (e.target.id === "f-to") state.to = e.target.value;
   if (["f-date","f-from","f-to"].includes(e.target.id)) render();
 });
 
