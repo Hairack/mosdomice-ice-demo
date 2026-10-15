@@ -198,8 +198,8 @@ input[type=date]{color-scheme:dark}
 
 <div class="tip">
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ»,
-  заполните адрес и время — текст заказа сформируется сам, как в сообщении для Telegram.
-  Кнопка «Отправить заказ в Telegram» в эмуляторе показывает то же сообщение, которое уйдёт менеджеру.
+  заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
+  Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
 </div>
 
 <script>
@@ -351,7 +351,7 @@ function render(){
 function viewCatalog(){
   const parts = [];
   parts.push(`<div class="lead"><h3>Соберите заказ по фракциям</h3>
-    <p>Отметьте, сколько льда нужно. Итог появится в разделе «Заказ» — его можно сразу отправить в Telegram.</p>`);
+    <p>Отметьте, сколько льда нужно. Итог появится в разделе «Заказ» — оттуда заказ уходит менеджеру.</p>`);
   if (lines().length){
     const units = lines().reduce((s,l) => s + l.q, 0);
     parts.push(`<div class="done on">✓ Выбрано ${lines().length} поз. · ${smart(units)} ед.</div>`);
@@ -447,7 +447,7 @@ function viewOrder(){
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
         <span style="font-weight:600">Итого</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
-      <button class="btn" id="send">Отправить заказ</button>
+      <button class="btn" id="send">Просто заказать</button>
       <button class="link" id="preview">Посмотреть текст заказа</button>
     </div>`;
 }
@@ -537,7 +537,7 @@ function showText(){
   const v = document.getElementById("view");
   document.getElementById("title").textContent = "Текст заказа";
   v.innerHTML = `
-    <p style="color:rgba(255,255,255,.7);font-size:10.5px;padding:6px 3px 11px">Так заказ увидит менеджер в Telegram</p>
+    <p style="color:rgba(255,255,255,.7);font-size:10.5px;padding:6px 3px 11px">Так заказ увидит менеджер</p>
     <div class="mono">${orderText().replace(/</g,"&lt;")}</div>
     <button class="btn" id="copy2" style="margin-top:12px">Скопировать текст</button>
     <button class="btn2" id="back">← Вернуться к заказу</button>`;
