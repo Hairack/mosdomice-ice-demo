@@ -913,6 +913,10 @@ function viewContacts(){
         ИНН 7720650439 · ОГРН 1207700493076<br>
         Производство и доставка пищевого льда по Москве и МО.
         <div class="ver">Московский Дом Бармена (MosDomIce)</div></div>
+    </div>
+
+    <div style="text-align:center;padding:14px 0 4px">
+      <a href="#" data-privacy style="color:rgba(255,255,255,.45);font-size:11.5px;text-decoration:underline">Политика конфиденциальности</a>
     </div>`;
 }
 
@@ -957,6 +961,8 @@ document.addEventListener("click", e => {
   const themeBtn = t.closest("[data-theme-btn]");
   if (themeBtn){ setTheme(themeBtn.dataset.themeBtn); return; }
 
+  if (t.closest("[data-privacy]")){ e.preventDefault(); showPrivacy(); return; }
+
   if (t.closest("#geo")){ locateMe(); return; }
   if (t.closest("#preview")){
     showText(); return;
@@ -986,6 +992,55 @@ function showText(){
     copyText(); toast("Текст заказа скопирован", "Так заказ увидит менеджер.");
   };
   document.getElementById("back").onclick = () => { state.tab = 1; render(); };
+}
+
+
+/* Независимая страница политики конфиденциальности внутри приложения */
+function showPrivacy(){
+  state.tab = 2;
+  document.getElementById("title").textContent = "Конфиденциальность";
+  const v = document.getElementById("view");
+  v.innerHTML = `
+    <div class="lead"><h3>Политика конфиденциальности</h3>
+      <p>Приложение «Лёд MosDomIce» уважает приватность своих пользователей. Здесь описано, какие данные обрабатываются при заказе льда.</p></div>
+
+    <div class="sec"><h4>Какие данные мы обрабатываем</h4>
+      <div class="about">• Контактный телефон — чтобы менеджер мог связаться по заказу.<br>
+      • Адрес доставки — чтобы рассчитать стоимость и доставить заказ.<br>
+      • Дата и интервал времени доставки — из вашей заявки.<br>
+      • Данные о составе заказа — выбранные фракции льда и количество.<br>
+      • Геопозиция — только если вы разрешили доступ, и только для определения адреса и зоны доставки.</div></div>
+
+    <div class="sec"><h4>Куда уходят данные</h4>
+      <div class="about">Заявка отправляется защищённым соединением напрямую менеджерам компании в служебный чат Telegram. Данные не продаются и не передаются посторонним лицам, кроме случаев, прямо предусмотренных законом.</div></div>
+
+    <div class="sec"><h4>Что мы не делаем</h4>
+      <div class="about">• Не собираем данные для рекламы и аналитики сторонних сетей.<br>
+      • Не создаём профили пользователей.<br>
+      • Не храним платёжные данные — оплата происходит вне приложения.</div></div>
+
+    <div class="sec"><h4>Хранение и удаление</h4>
+      <div class="about">Данные заявки используются только для выполнения заказа. Чтобы удалить свои данные, напишите нам — контакты на вкладке «Контакты».</div></div>
+
+    <div class="sec"><h4>Удаление данных</h4>
+      <div class="about">Хотите, чтобы мы удалили данные ваших заявок? Отправьте запрос одним нажатием — мы удалим их и подтвердим по телефону.</div>
+      <a class="btn" href="mailto:mosdombar@gmail.com?subject=%D0%A3%D0%B4%D0%B0%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85%20%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%9B%D1%91%D0%B4%20MosDomIce" style="display:block;text-align:center;margin-top:12px;text-decoration:none">🗑 Запросить удаление данных</a>
+      <div class="about" style="margin-top:8px;opacity:.6;font-size:11px">Если почта не открылась — позвоните по номеру +7 (495) 411-39-96.</div>
+    </div>
+
+    <div class="sec"><h4>Дети</h4>
+      <div class="about">Приложение предназначено для деловых клиентов и не адресовано детям младше 13 лет.</div></div>
+
+    <div class="sec"><h4>Контакты</h4>
+      <div class="about"><b>ООО «Мир бармена»</b><br>
+      109089, Москва, ул. Угрешская, д. 2, стр. 15, оф. 117<br>
+      Телефон: +7 (495) 411-39-96<br>
+      Почта: mosdombar@gmail.com<br>
+      Сайт: mosdomice.com
+      <div class="ver">Обновлено: 16.10.2026</div></div></div>
+
+    <button class="btn2" id="privacyBack" style="margin-top:14px">← Назад к контактам</button>`;
+  document.getElementById("privacyBack").onclick = () => { state.tab = 2; render(); };
 }
 
 let locateTimer;
