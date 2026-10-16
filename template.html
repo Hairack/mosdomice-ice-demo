@@ -422,6 +422,20 @@ function outsideKm(lat, lon){
   return Math.max(1, Math.ceil(best));
 }
 const FREE_TOTAL = 5000, MKAD_PRICE = 1000, KM_PRICE = 100;
+const HORECA_RATE = 0.15;
+/* адрес — заведение (бар, кафе, ресторан и т. п.): целые слова, «Барвиха» не считается */
+const HORECA_WORDS = ["бар","бара","бару","бары","баре","баром","баров","барах",
+  "кафе","кафетерий","кофейня","кофейни","кофейню","кофейне","кофейней",
+  "ресторан","ресторана","ресторану","рестораны","ресторане","рестораном","ресторанов",
+  "паб","паба","пабу","пабы","пабе","пабом","бистро",
+  "трактир","трактира","трактире","фудкорт","фудкорта","фудкорте",
+  "кейтеринг","кейтеринга","кейтеринге"];
+function isHoReCa(){
+  const words = String(state.address).toLowerCase().replace(/ё/g, "е").split(/[^a-zа-я0-9-]+/i).filter(Boolean);
+  return words.some(w => HORECA_WORDS.includes(w));
+}
+function discountAmount(){ return isHoReCa() ? total() * HORECA_RATE : 0; }
+function discountedTotal(){ return total() - discountAmount(); }
 /* доставка: до 5 000 ₽ — 1 000 ₽ по МКАД, за МКАД +100 ₽/км */
 function deliveryCost(){
   if (!lines().length) return 0;
@@ -531,8 +545,9 @@ function orderText(){
   if (state.comment.trim()) out.push("Комментарий: " + state.comment.trim());
   out.push("");
   out.push("Сумма за лёд: " + fmtInt(total()) + " ₽");
+  if (discountAmount() > 0) out.push("Скидка 15% (бар, кафе, ресторан): −" + fmtInt(discountAmount()) + " ₽");
   out.push("Стоимость доставки: " + fmtInt(deliveryCost()) + " ₽");
-  out.push("Итого к оплате: " + fmtInt(total() + deliveryCost()) + " ₽");
+  out.push("Итого к оплате: " + fmtInt(discountedTotal() + deliveryCost()) + " ₽");
   if (negotiable()) out.push("Позиции «от» — цена по запросу, менеджер подтвердит.");
   if (deliveryNote()) out.push(deliveryNote());
   out.push("Заказ из приложения MosDomIce");
@@ -665,9 +680,11 @@ function viewOrder(){
 
     <div class="sec"><h4>Итог</h4>
       <div class="total"><span>Сумма за лёд</span><b>${fmtInt(total())} ₽</b></div>
+      ${discountAmount() > 0 ? `<div class="total"><span style="color:#4ade80">Скидка 15% (бар, кафе, ресторан)</span><b style="color:#4ade80">−${fmtInt(discountAmount())} ₽</b></div>` : ""}
       <div class="total"><span>Стоимость доставки</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
-        <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
+        <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(discountedTotal() + deliveryCost())} ₽</b></div>
+      ${isHoReCa() ? '<div class="note">Скидка 15% применена как заведению: бар, кафе или ресторан. Доставка считается отдельно.</div>' : ""}
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
       <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Просто заказать</button>
       <button class="link" id="preview">Посмотреть текст заказа</button>
