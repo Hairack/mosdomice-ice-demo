@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Лёд MosDomIce — эмулятор приложения</title>
+<style>
+/* ===== ТЕМА: значения токенов подставляет сборка эмулятора ===== */
+:root{
+  --bg-1:#0a1c30;--bg-2:#0c2138;--bg-3:#08131f;--glow:rgba(140,212,242,.20);
+  --fg:#ffffff;--fg-strong:#eaf4ff;
+  --fg-78:rgba(255,255,255,.78);--fg-72:rgba(255,255,255,.72);--fg-60:rgba(255,255,255,.60);
+  --fg-55:rgba(255,255,255,.55);--fg-50:rgba(255,255,255,.50);--fg-45:rgba(255,255,255,.45);
+  --fg-42:rgba(255,255,255,.42);--fg-30:rgba(255,255,255,.30);
+  --fg-11:rgba(255,255,255,.11);--fg-07:rgba(255,255,255,.07);
+  --card:rgba(255,255,255,.06);--card-shadow:none;
+  --fill:rgba(255,255,255,.08);--fill-2:rgba(255,255,255,.12);--line:rgba(255,255,255,.10);
+  --ice:#8cd4f2;--ice-soft:#cfeaff;--ice-rgb:140,212,242;
+  --accent:#8cd4f2;--accent-ink:#08151f;
+  --hl-bg:rgba(140,212,242,.20);--step-bg:rgba(140,212,242,.22);
+  --step-off-bg:rgba(255,255,255,.05);--step-off-fg:rgba(255,255,255,.28);
+  --chip-bg:rgba(255,255,255,.10);--chip-fg:#ffffff;
+  --photo-fade:rgba(6,16,27,.90);
+  --tabs-bg:rgba(5,11,19,.90);--toast-bg:rgba(12,30,50,.97);--toast-fg:#eaf4ff;
+  --mono-bg:rgba(0,0,0,.42);--mono-fg:#e9f5ff;
+  --map-1:#0f2b45;--map-2:#123a5c;--map-3:#0d2438;
+  --map-grid:rgba(140,212,242,.50);--map-road:rgba(190,220,240,.35);--map-river:rgba(70,150,215,.45);
+  --map-pin:#0a1c30;--empty-pin:rgba(140,212,242,.80);
+  --wm-opacity:0;--wm-size:78%;--wm-pos:center 64%;
+  --bar-display:flex;--brandbar-bg:transparent;--bar-name:#ffffff;--bar-note:rgba(255,255,255,.55);
+  --title-size:15px;--title-spacing:.2px;--title-transform:none;--title-weight:600;
+  --scheme:dark;
+  --device-bg:#0a0f17;--device-edge:#22334a;--device-shadow:0 30px 70px rgba(0,0,0,.7);
+  --page-bg:#050b14;
+}
+
+/* --- ВАРИАНТ A · «Северный лёд»: холодный фрост, стеклянные карточки, тонкие ледяные линии ===== */
+.screen[data-theme="a"]{
+  --bg-1:#0b2136;--bg-2:#123352;--bg-3:#081a2b;--glow:rgba(150,220,246,.26);
+  --fg-strong:#f2faff;
+  --card:rgba(255,255,255,.075);--card-shadow:inset 0 1px 0 rgba(255,255,255,.09);
+  --line:rgba(160,222,248,.20);--fill:rgba(255,255,255,.09);--fill-2:rgba(255,255,255,.14);
+  --ice:#a6e2f8;--ice-soft:#e2f4ff;--accent:#a6e2f8;--accent-ink:#07202f;
+  --hl-bg:rgba(166,226,248,.22);--step-bg:rgba(166,226,248,.24);--chip-bg:rgba(255,255,255,.12);
+  --photo-fade:rgba(8,26,43,.92);
+  --tabs-bg:rgba(7,22,36,.92);--toast-bg:rgba(16,45,72,.97);
+  --map-1:#123a5c;--map-2:#1a527c;--map-3:#0e2c46;--map-grid:rgba(166,226,248,.55);
+  --map-pin:#0a1c30;--empty-pin:rgba(166,226,248,.85);
+  --wm-opacity:0;--wm-size:74%;--wm-pos:center 66%;
+  --bar-display:flex;--bar-name:#e9f7ff;--bar-note:rgba(214,238,252,.62);
+  --title-spacing:.1px;
+}
+
+/* --- ВАРИАНТ B · «Ледяная витрина»: светлый холодный фон, крупный логотип-печать, синие акценты === */
+.screen[data-theme="b"]{
+  --bg-1:#eef5fb;--bg-2:#dbe9f6;--bg-3:#e7f1fa;--glow:rgba(120,190,235,.42);
+  --fg:#0f2233;--fg-strong:#0b1a28;
+  --fg-78:rgba(15,34,51,.80);--fg-72:rgba(15,34,51,.74);--fg-60:rgba(15,34,51,.62);
+  --fg-55:rgba(15,34,51,.55);--fg-50:rgba(15,34,51,.48);--fg-45:rgba(15,34,51,.42);
+  --fg-42:rgba(15,34,51,.40);--fg-30:rgba(15,34,51,.28);
+  --fg-11:rgba(15,34,51,.12);--fg-07:rgba(15,34,51,.09);
+  --card:rgba(255,255,255,.92);--card-shadow:0 6px 18px rgba(20,60,100,.10);
+  --fill:rgba(15,34,51,.05);--fill-2:rgba(15,34,51,.10);--line:rgba(15,34,51,.12);
+  --ice:#1d6ea8;--ice-soft:#12507c;--ice-rgb:29,110,168;
+  --accent:#1d6ea8;--accent-ink:#ffffff;
+  --hl-bg:rgba(29,110,168,.14);--step-bg:rgba(29,110,168,.16);
+  --step-off-bg:rgba(15,34,51,.06);--step-off-fg:rgba(15,34,51,.32);
+  --chip-bg:rgba(15,34,51,.08);--chip-fg:#0f2233;
+  --photo-fade:rgba(10,30,48,.55);
+  --tabs-bg:rgba(255,255,255,.94);--toast-bg:rgba(12,40,64,.96);--toast-fg:#eef7ff;
+  --mono-bg:rgba(15,34,51,.06);--mono-fg:#0f2233;
+  --map-1:#cfe2f1;--map-2:#e6f1f9;--map-3:#c6dcec;--map-grid:rgba(29,110,168,.35);
+  --map-road:rgba(255,255,255,.85);--map-river:rgba(90,160,215,.55);
+  --map-pin:#0f2233;--empty-pin:rgba(29,110,168,.75);
+  --wm-opacity:0;--wm-size:70%;--wm-pos:center 66%;
+  --bar-display:flex;--bar-name:#0b1a28;--bar-note:rgba(11,26,40,.55);
+  --scheme:light;
+  --device-bg:#f4f8fc;--device-edge:#cddced;--device-shadow:0 26px 60px rgba(30,70,110,.35);
+  --page-bg:#dce8f3;
+}
+
+/* --- ВАРИАНТ C · «Бар-борд»: тёмный графит, крупная шапка-вывеска, тёплый акцент бара === */
+.screen[data-theme="c"]{
+  --bg-1:#15171c;--bg-2:#1d2128;--bg-3:#101216;--glow:rgba(255,180,90,.14);
+  --fg-strong:#fff6ea;
+  --card:rgba(255,255,255,.05);--card-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.11);--fill:rgba(255,255,255,.07);--fill-2:rgba(255,255,255,.13);
+  --ice:#f6c489;--ice-soft:#ffe6c2;--accent:#f6c489;--accent-ink:#241705;
+  --hl-bg:rgba(246,196,137,.20);--step-bg:rgba(246,196,137,.22);--chip-bg:rgba(255,255,255,.09);
+  --photo-fade:rgba(16,18,22,.92);
+  --tabs-bg:rgba(12,13,16,.94);--toast-bg:rgba(40,32,20,.97);
+  --map-1:#2a2c33;--map-2:#35383f;--map-3:#1d1f24;--map-grid:rgba(246,196,137,.30);
+  --map-road:rgba(255,255,255,.28);--map-river:rgba(120,140,160,.42);
+  --map-pin:#15171c;--empty-pin:rgba(246,196,137,.8);
+  --wm-opacity:0;--wm-size:66%;--wm-pos:center 68%;
+  --bar-display:flex;--brandbar-bg:rgba(246,196,137,.10);
+  --bar-name:#ffdfb0;--bar-note:rgba(255,226,186,.6);
+  --title-size:16px;--title-weight:700;--title-spacing:2.4px;--title-transform:uppercase;
+  --device-bg:#0c0d10;--device-edge:#33363d;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  background:var(--page-bg);min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;gap:18px;padding:26px 16px 42px;color:#fff;
+}
+.head{text-align:center}
+.head h1{font-size:17px;font-weight:600;letter-spacing:.2px}
+.head p{color:rgba(255,255,255,.55);font-size:12px;margin-top:5px}
+
+/* переключатель вариантов брендирования (только в эмуляторе) */
+.switcher{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.switcher>span{color:rgba(255,255,255,.5);font-size:11.5px;margin-right:2px}
+.sw{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:rgba(255,255,255,.75);
+    font-family:inherit;font-size:11.5px;font-weight:600;padding:8px 14px;border-radius:20px;cursor:pointer}
+.sw:hover{border-color:rgba(255,255,255,.35)}
+.sw.on{background:#8cd4f2;border-color:#8cd4f2;color:#08151f}
+
+.stage{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.slot{display:flex;flex-direction:column;align-items:center;gap:10px}
+.slot .cap{color:var(--ice);font-size:10.5px;font-weight:700;letter-spacing:1.4px}
+.device{
+  width:344px;border-radius:48px;padding:11px;background:var(--device-bg);border:1px solid var(--device-edge);
+  box-shadow:var(--device-shadow), inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.screen{
+  position:relative;border-radius:38px;overflow:hidden;height:712px;display:flex;flex-direction:column;
+  color:var(--fg);
+  background-image:radial-gradient(circle at 92% 4%,var(--glow),transparent 46%),
+                   linear-gradient(155deg,var(--bg-1),var(--bg-2) 45%,var(--bg-3));
+}
+.screen::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:url('__LOGO__');background-repeat:no-repeat;
+  background-position:var(--wm-pos);background-size:var(--wm-size) auto;opacity:var(--wm-opacity);
+}
+.status{position:relative;z-index:1;display:flex;justify-content:space-between;padding:10px 24px 0;font-size:11px;font-weight:600;color:var(--fg-strong)}
+.brandbar{
+  position:relative;z-index:1;display:var(--bar-display);gap:9px;align-items:center;
+  padding:6px 16px 0;background:var(--brandbar-bg);
+}
+.brandbar img{width:30px;height:30px;object-fit:contain;flex:none;filter:var(--bar-logo-filter,none)}
+.screen[data-theme="b"] .brandbar img{filter:invert(1) brightness(.15)}
+.brandbar b{display:block;color:var(--bar-name);font-size:10.5px;font-weight:700;letter-spacing:.3px;line-height:1.25}
+.brandbar span{color:var(--bar-note);font-size:8.5px}
+.top{position:relative;z-index:1;padding:9px 18px 2px;text-align:center;
+     font-size:var(--title-size);font-weight:var(--title-weight);letter-spacing:var(--title-spacing);
+     text-transform:var(--title-transform)}
+.hdr{position:relative;z-index:1;display:flex;gap:8px;align-items:center;padding:5px 12px 9px;border-bottom:1px solid var(--line)}
+.hdr a{font-size:10px;font-weight:600;text-decoration:none;padding:7px 11px;border-radius:20px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr .tel{background:var(--chip-bg);color:var(--chip-fg)}
+.hdr .site{background:var(--hl-bg);color:var(--ice-soft);margin-left:auto}
+.scroll{position:relative;z-index:1;flex:1;overflow-y:auto;padding:0 12px 14px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.lead{padding:4px 3px 12px}
+.lead h3{font-size:15px;font-weight:600;margin-bottom:5px}
+.lead p{color:var(--fg-72);font-size:11px;line-height:1.45}
+.done{color:var(--ice);font-size:10.5px;font-weight:600;margin-top:8px;display:none}
+.done.on{display:block}
+
+/* карточка фракции */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:10px;
+      box-shadow:var(--card-shadow);transition:border-color .18s}
+.card.chosen{border-color:var(--accent)}
+.photo{height:104px;background-size:cover;background-position:center;position:relative}
+.photo::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,var(--photo-fade))}
+.pricetag{position:absolute;top:8px;right:8px;z-index:2;background:var(--accent);color:var(--accent-ink);
+  font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:20px}
+.body{padding:10px 12px 12px}
+.pname{font-size:13.5px;font-weight:600}
+.pdesc{color:var(--fg-72);font-size:10.5px;line-height:1.4;margin-top:4px}
+.more{color:var(--ice);font-size:10px;font-weight:600;margin-top:7px;cursor:pointer;user-select:none}
+.details{display:none;margin-top:8px;gap:6px;flex-direction:column}
+.details.on{display:flex}
+.details div{color:var(--fg-78);font-size:10px;display:flex;gap:7px;align-items:flex-start}
+.details div::before{content:"";width:5px;height:5px;border-radius:1px;background:var(--ice);
+  margin-top:4px;flex:none;transform:rotate(45deg)}
+.counter{display:flex;align-items:center;gap:9px;margin-top:10px;padding-top:10px;border-top:1px solid var(--fg-11)}
+.step{width:33px;height:33px;border-radius:50%;background:var(--step-bg);color:var(--ice);
+      display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex:none;
+      cursor:pointer;border:none;font-family:inherit;transition:transform .1s}
+.step:active{transform:scale(.9)}
+.step.off{background:var(--step-off-bg);color:var(--step-off-fg);cursor:default}
+.qty{width:66px;background:var(--fill);border-radius:11px;padding:5px 0;text-align:center;flex:none}
+.qty b{font-size:14px;display:block;line-height:1.15}
+.qty span{color:var(--fg-50);font-size:8.5px}
+.grow{flex:1}
+.sum{color:var(--ice-soft);font-size:12.5px;font-weight:600;white-space:nowrap}
+.trash{background:none;border:none;color:var(--fg-50);font-size:13px;cursor:pointer;padding:0 2px}
+
+/* секции */
+.sec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px;margin-bottom:10px;
+     box-shadow:var(--card-shadow)}
+.sec h4{color:var(--ice);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--fg-07)}
+.row:last-of-type{border-bottom:none}
+.thumb{width:40px;height:40px;border-radius:10px;background-size:cover;background-position:center;flex:none}
+.rowtxt b{font-size:12.5px;display:block;font-weight:600}
+.rowtxt span{color:var(--fg-60);font-size:10px}
+.clear{width:100%;background:none;border:none;color:var(--fg-60);font-size:10px;padding-top:9px;cursor:pointer;font-family:inherit}
+.empty{padding:70px 20px;text-align:center}
+.empty .cube{font-size:52px;color:var(--empty-pin)}
+.empty h3{font-size:16px;font-weight:600;margin-top:12px}
+.empty p{color:var(--fg-72);font-size:11px;line-height:1.5;margin-top:8px}
+
+/* поля */
+.field{background:var(--fill);border-radius:11px;padding:10px 12px;font-size:12px;margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.field input{background:none;border:none;outline:none;color:var(--fg);font-size:12px;width:100%;font-family:inherit}
+.field input::placeholder{color:var(--fg-45)}
+.field .ico{color:var(--ice);font-size:11px;flex:none}
+.two{display:flex;gap:8px;margin-bottom:8px}
+.two label{flex:1;display:block}
+.mini-btn{background:var(--hl-bg);color:var(--ice-soft);border:none;border-radius:20px;
+  padding:6px 10px;font-size:9.5px;font-weight:700;cursor:pointer;font-family:inherit;flex:none;white-space:nowrap}
+.mini{color:var(--fg-55);font-size:8.5px;margin-bottom:3px;display:block}
+.box{background:var(--fill);border-radius:11px;padding:8px 10px}
+.box input{background:none;border:none;outline:none;color:var(--fg);font-size:12px;width:100%;font-family:inherit}
+select{background:none;border:none;outline:none;color:var(--fg);font-size:12px;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
+input[type=date]{color-scheme:var(--scheme)}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px}
+.total span{color:var(--fg-78);font-size:13px}
+.total b{font-size:20px;font-weight:700}
+.note{display:flex;gap:7px;color:var(--fg-72);font-size:10.5px;line-height:1.45;margin-bottom:9px}
+.note::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ice);margin-top:4px;flex:none}
+.btn.off{opacity:.45;cursor:default}
+.btn{width:100%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13.5px;text-align:center;
+     padding:14px;border-radius:14px;border:none;cursor:pointer;font-family:inherit;margin-top:2px}
+.btn2{width:100%;background:var(--fill-2);color:var(--fg);font-weight:600;font-size:13px;text-align:center;
+      padding:13px;border-radius:14px;border:none;cursor:pointer;font-family:inherit;margin-top:8px}
+.btn3{width:100%;background:var(--fill);color:var(--ice);font-weight:600;font-size:12px;text-align:center;
+      padding:12px;border-radius:14px;border:none;cursor:pointer;font-family:inherit;margin-top:8px}
+.duo{display:flex;gap:8px;margin-top:9px}
+.duo button{flex:1;background:var(--fill);color:var(--fg-78);font-size:10.5px;
+            text-align:center;padding:11px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;font-weight:500}
+.link{display:block;text-align:center;color:var(--ice);font-size:10px;font-weight:600;margin-top:10px;cursor:pointer;background:none;border:none;width:100%;font-family:inherit}
+.mono{background:var(--mono-bg);border-radius:14px;padding:13px;color:var(--mono-fg);
+      font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;white-space:pre-wrap;line-height:1.5}
+
+/* контакты */
+.ok{display:flex;align-items:center;gap:7px;margin-bottom:11px}
+.dot{width:9px;height:9px;border-radius:50%;background:#ff9f43;flex:none}
+.dot.g{background:#39d98a}
+.ok span{color:var(--fg-78);font-size:11.5px;font-weight:500}
+.hint{color:var(--ice);font-size:10.5px;font-weight:700;margin:12px 0 6px}
+.hint + p{color:var(--fg-72);font-size:10.5px;line-height:1.5}
+.crow{display:flex;align-items:center;gap:10px;padding:9px 0;text-decoration:none;color:inherit}
+.crow .ico{color:var(--ice);font-size:11px;width:16px;text-align:center}
+.crow b{font-size:12px;font-weight:500;display:block}
+.crow span{color:var(--fg-55);font-size:8.5px}
+.crow .chev{color:var(--fg-30);font-size:11px;margin-left:auto}
+.map{position:relative;height:132px;border-radius:14px;overflow:hidden;margin-bottom:11px;
+     background:linear-gradient(160deg,var(--map-1),var(--map-2) 50%,var(--map-3))}
+.map .grid{position:absolute;inset:0;opacity:.30;
+  background-image:linear-gradient(var(--map-grid) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--map-grid) 1px,transparent 1px);
+  background-size:26px 26px;transform:rotate(-8deg) scale(1.25)}
+.map .river{position:absolute;left:-10%;right:-10%;top:56%;height:20px;transform:rotate(-9deg);
+  background:var(--map-river);filter:blur(1px)}
+.map .road{position:absolute;left:-10%;right:-10%;top:26%;height:7px;transform:rotate(-9deg);
+  background:var(--map-road)}
+.map .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);text-align:center}
+.map .pin .dot{width:30px;height:30px;border-radius:50%;background:var(--map-pin);border:2px solid var(--ice);
+  display:flex;align-items:center;justify-content:center;color:var(--ice);font-size:14px;margin:0 auto}
+.map .pin b{display:block;margin-top:5px;font-size:9.5px;background:var(--map-pin);
+  border:1px solid var(--map-grid);border-radius:9px;padding:2px 7px;white-space:nowrap;color:var(--fg)}
+.map .lbl{position:absolute;left:8px;bottom:7px;color:var(--fg-45);font-size:8px}
+.route{display:flex;align-items:center;gap:9px;background:var(--accent);color:var(--accent-ink);font-weight:700;
+  font-size:12.5px;border:none;width:100%;padding:13px;border-radius:14px;cursor:pointer;
+  font-family:inherit;text-decoration:none}
+.route .chev{margin-left:auto;font-weight:600;opacity:.6}
+.about{color:var(--fg-72);font-size:10.5px;line-height:1.55}
+.about b{color:var(--fg);font-size:12.5px;display:block;margin-bottom:5px;font-weight:600}
+.ver{color:var(--fg-42);font-size:9.5px;margin-top:8px}
+
+/* таббар */
+.tabs{position:relative;z-index:1;display:flex;border-top:1px solid var(--line);background:var(--tabs-bg)}
+.tab{flex:1;background:none;border:none;padding:10px 0 15px;color:var(--fg-42);font-size:9px;
+     font-weight:500;cursor:pointer;font-family:inherit;position:relative}
+.tab.on{color:var(--ice)}
+.tab i{display:block;font-size:16px;font-style:normal;margin-bottom:2px}
+.badge{position:absolute;top:6px;left:50%;margin-left:6px;background:var(--accent);color:var(--accent-ink);
+       border-radius:9px;font-size:8px;padding:1px 5px;font-weight:800;display:none}
+.badge.on{display:inline-block}
+
+/* всплывающее сообщение */
+.toast{position:absolute;left:16px;right:16px;bottom:96px;background:var(--toast-bg);
+       border:1px solid var(--hl-bg);border-radius:14px;padding:12px 14px;
+       font-size:11px;line-height:1.5;color:var(--toast-fg);opacity:0;transform:translateY(10px);
+       transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+.toast b{display:block;font-size:12px;margin-bottom:3px}
+.tip{max-width:1180px;color:rgba(255,255,255,.5);font-size:11.5px;line-height:1.6;text-align:center}
+.tip b{color:rgba(255,255,255,.8)}
+.verline{color:#8cd4f2;font-size:11px;font-weight:700;letter-spacing:.4px;margin-bottom:8px}
+</style></head><body>
+
+<div class="head">
+  <h1>Лёд MosDomIce — эмулятор приложения</h1>
+  <p>Нажимайте кнопки и вводите данные — всё работает как в приложении на iPhone</p>
+</div>
+
+<div class="switcher">
+  <span>Вариант брендирования:</span>
+  <button class="sw on" data-variant="a">A · Северный лёд</button>
+  <button class="sw" data-variant="b">B · Ледяная витрина</button>
+  <button class="sw" data-variant="c">C · Бар-борд</button>
+</div>
+
+<div class="stage">
+  <div class="slot">
+    <div class="cap" id="varcap">ВАРИАНТ A · СЕВЕРНЫЙ ЛЁД</div>
+    <div class="device"><div class="screen" data-theme="__THEME_NAME__">
+      <div class="status"><span>9:41</span><span>&#9646;&#9646;&#9646; &#6310; &#9648;</span></div>
+      <div class="brandbar">
+        <img src="__LOGO_HEADER__" alt="">
+        <div><b>МОСКОВСКИЙ ДОМ БАРМЕНА</b><span>производство и доставка льда &middot; с 2014 года</span></div>
+      </div>
+      <div class="top" id="title">Калькулятор льда</div>
+      <div class="hdr">
+        <a class="tel" href="tel:+74954113996">&#9990; +7 (495) 411-39-96</a>
+        <a class="site" href="https://mosdomice.com" target="_blank">&#9678; mosdomice.com</a>
+      </div>
+      <div class="scroll" id="view"></div>
+      <div class="tabs">
+        <button class="tab on" data-tab="0"><i>&#9671;</i>Калькулятор</button>
+        <button class="tab" data-tab="1"><i>&#9709;</i>Заказ<span class="badge" id="badge">0</span></button>
+        <button class="tab" data-tab="2"><i>&#9673;</i>Контакты</button>
+      </div>
+      <div class="toast" id="toast"></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="tip">
+  <div class="verline" id="version">версия от <b id="ver">__VERSION__</b></div>
+  <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
+  заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
+  Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
+</div>
+
+<script>
+const IMG = __IMG__;
+const PRODUCTS = [
+  {id:"lump",  name:"Кусковой лёд",           order:"Кускового льда", unit:"кг", price:50,  from:false, img:"lump",
+   sum:"Плотный прозрачный кубик весом около 18 г. Базовый лёд для бара, зала и витрины.",
+   details:["Льдогенераторы BREMA, кубик ~18 г","Долго тает — не разбавляет напиток","Фасовка от 1 кг, опт от паллеты"],
+   def:30, step:10},
+  {id:"frappe",name:"Фраппе (колотый)",       order:"Фраппе",         unit:"кг", price:50,  from:false, img:"frappe",
+   sum:"Колотый лёд для коктейлей, кальяна и ведёрных подач.",
+   details:["Мелкая и средняя фракция","Для шейкеров, кальянов, ведёрных подач","Всегда в наличии, отгрузка в день заказа"],
+   def:20, step:10},
+  {id:"flake", name:"Чешуйчатый лёд (флейк)", order:"Чешуйчатого",    unit:"кг", price:40,  from:false, img:"flake",
+   sum:"Пластинки неправильной формы — для выкладки рыбы, мяса и витрин.",
+   details:["Плотно облегает продукт","Выкладка рыбы, мяса, овощей, морепродуктов","Опт и розница"],
+   def:20, step:10},
+  {id:"cube5", name:"Ледяные кубы 5x5x5 см",   order:"Ледяных кубов 5x5x5 см",   unit:"шт", price:30,  from:false, img:"cube5",
+   sum:"Прозрачный куб ручной резки под виски и крепкие напитки — тает медленно и не разбавляет.",
+   details:["Размер 5x5x5 см, резка под заказ","Прозрачный пищевой лёд из питьевой воды","Поштучно, отгрузка в день заказа"],
+   def:10, step:1},
+  {id:"stick", name:"Ледяные стики 4x4x12 см",  order:"Ледяных стиков 4x4x12 см",  unit:"шт", price:40,  from:false, img:"stick",
+   sum:"Брусок-стик длиной 12 см — вытянутая форма для стаканов хайбол и подач в колонне.",
+   details:["Размер 4x4x12 см, резка под заказ","Удобен для хайболов и ведёрных подач","Поштучно, отгрузка в день заказа"],
+   def:10, step:1},
+  {id:"glass-craft", name:"Крафтовые ледяные рюмки", order:"Крафтовых ледяных рюмок", unit:"шт", price:130, from:false, img:"glass-craft",
+   sum:"Ледяная рюмка под шоты и десерты: держит холод до последнего глотка и не требует мытья.",
+   details:["Формовая отливка под шоты и сеты","Держит напиток холодным, не размывает вкус","Поштучно, партии под банкет"],
+   def:10, step:1},
+  {id:"glass-darts", name:"Ледяные рюмки для алко-дартса", order:"Ледяных рюмок для алко-дартса", unit:"шт", price:20, from:false, img:"glass-darts",
+   sum:"Недорогая рюмка для игры в алко-дартс: бьётся эффектно, партия идёт на весь вечер.",
+   details:["Для игровой механики алко-дартс","Лёд разбивается о мишень, не осколки стекла","Поштучно, выгодно партией"],
+   def:10, step:1},
+  {id:"cups",  name:"Лёд в стаканчиках",      order:"Стаканчиков",    unit:"шт", price:60,  from:false, img:"cups",
+   sum:"Порционный лёд 200 г в пластиковом стаканчике, запаян мембраной. Розничная фасовка.",
+   details:["Вес льда в стаканчике — 200 г","Запаяны мембраной, готовы к полке","Для магазинов, сетей и гипермаркетов"],
+   def:20, step:20},
+  {id:"dry",   name:"Сухой лёд (гранулы)",    order:"Сухого",         unit:"кг", price:200, from:false, img:"dry",
+   sum:"Твёрдая фракция CO₂: эффекты, дым, технологическое охлаждение. Выпускаем под заказ.",
+   details:["Гранулы ~3 / 9 / 16 мм","Блоки 0,5–2 кг — по запросу","Дополнительное направление, под заказ"],
+   def:10, step:10}
+];
+
+const state = {
+  tab: 0,
+  qty: {},
+  date: new Date().toISOString().slice(0,10),
+  from: "10:00", to: "17:00",
+  address: "", phone: "", comment: "", km: 0, coords: null, kmStatus: "",
+  expanded: {},
+};
+
+/* --- расчёты --- */
+const num = v => String(v).replace(/\s/g,"");
+const fmtInt = n => n.toLocaleString("ru-RU");
+const smart = v => Number.isInteger(v) ? String(v) : String(v).replace(".", ",");
+
+function lines(){ return PRODUCTS.filter(p => (state.qty[p.id]||0) > 0).map(p => ({p, q: state.qty[p.id]})); }
+function total(){ return lines().reduce((s,l) => s + (l.p.from ? 0 : l.q * l.p.price), 0); }
+function weight(){ return lines().filter(l => l.p.unit === "кг").reduce((s,l) => s + l.q, 0); }
+function negotiable(){ return lines().some(l => l.p.from); }
+/* --- геозона МКАД (данные OpenStreetMap) --- */
+const MKAD = [[55.749436, 37.842338], [55.771452, 37.843494], [55.815197, 37.838881], [55.820097, 37.837933], [55.822589, 37.83674], [55.825975, 37.833954], [55.828954, 37.829979], [55.879604, 37.731852], [55.892545, 37.70501], [55.894645, 37.694309], [55.895718, 37.662863], [55.898254, 37.637862], [55.901478, 37.620504], [55.909568, 37.590155], [55.911003, 37.58096], [55.910876, 37.571444], [55.907097, 37.536014], [55.905865, 37.529021], [55.903205, 37.52139], [55.888326, 37.486792], [55.883453, 37.466949], [55.882635, 37.451026], [55.881583, 37.444225], [55.873275, 37.417594], [55.868463, 37.407317], [55.86464, 37.402193], [55.860503, 37.398413], [55.848217, 37.391821], [55.845112, 37.391917], [55.839246, 37.395207], [55.835445, 37.395783], [55.823687, 37.392865], [55.807061, 37.387498], [55.801963, 37.3843], [55.789096, 37.372093], [55.785709, 37.370279], [55.782664, 37.369668], [55.750289, 37.368812], [55.746448, 37.369413], [55.714061, 37.385477], [55.708722, 37.389615], [55.692041, 37.411671], [55.689037, 37.413927], [55.682436, 37.416872], [55.664987, 37.429926], [55.660137, 37.434362], [55.600192, 37.504547], [55.597093, 37.509479], [55.594041, 37.517948], [55.577138, 37.588546], [55.575926, 37.596551], [55.571842, 37.666604], [55.572248, 37.674698], [55.573925, 37.682762], [55.587687, 37.719948], [55.602089, 37.754037], [55.624405, 37.795321], [55.649004, 37.83285], [55.654276, 37.838054], [55.657141, 37.839388], [55.661313, 37.839905], [55.664798, 37.839112], [55.687942, 37.830431], [55.694758, 37.82959], [55.6996, 37.830848], [55.715513, 37.838741], [55.742133, 37.842008], [55.749436, 37.842338]];
+function insideMKAD(lat, lon){
+  let inside = false;
+  for (let i = 0, j = MKAD.length - 1; i < MKAD.length; j = i++){
+    const yi = MKAD[i][0], xi = MKAD[i][1], yj = MKAD[j][0], xj = MKAD[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function segKm(lat, lon, la1, lo1, la2, lo2){
+  const latRef = (la1 + la2) / 2;
+  const kx = 111.320 * Math.cos(latRef * Math.PI / 180), ky = 110.574;
+  const px = (lon - lo1) * kx, py = (lat - la1) * ky;
+  const bx = (lo2 - lo1) * kx, by = (la2 - la1) * ky;
+  const l2 = bx * bx + by * by;
+  let t = l2 === 0 ? 0 : (px * bx + py * by) / l2;
+  t = Math.min(1, Math.max(0, t));
+  return Math.hypot(px - t * bx, py - t * by);
+}
+/* километры от МКАД: 0 — в пределах кольца */
+function outsideKm(lat, lon){
+  if (lat == null || lon == null) return 0;
+  if (insideMKAD(lat, lon)) return 0;
+  let best = Infinity;
+  for (let i = 0, j = MKAD.length - 1; i < MKAD.length; j = i++)
+    best = Math.min(best, segKm(lat, lon, MKAD[j][0], MKAD[j][1], MKAD[i][0], MKAD[i][1]));
+  return Math.max(1, Math.ceil(best));
+}
+const FREE_TOTAL = 5000, MKAD_PRICE = 1000, KM_PRICE = 100;
+/* доставка: до 5 000 ₽ — 1 000 ₽ по МКАД, за МКАД +100 ₽/км */
+function deliveryCost(){
+  if (!lines().length) return 0;
+  let cost = total() < FREE_TOTAL ? MKAD_PRICE : 0;
+  cost += state.km * KM_PRICE;
+  return cost;
+}
+function deliveryNote(){
+  if (!lines().length) return "";
+  const parts = [total() < FREE_TOTAL ? "заказ до 5 000 ₽ — доставка по МКАД 1 000 ₽" : "доставка по МКАД бесплатно"];
+  if (state.km > 0) parts.push("за МКАД +100 ₽/км (примерно " + smart(state.km) + " км)");
+  return "Доставка: " + parts.join(", ");
+}
+function fmtDate(){
+  const [y,m,d] = state.date.split("-");
+  return d && m && y ? `${d}.${m}.${y}` : state.date;
+}
+/* доставка не раньше чем через 4 часа от момента заявки */
+const MIN_LEAD_MIN = 240;   // доставка не раньше чем через 4 часа
+const MIN_INTERVAL = 180;   // интервал доставки не меньше 3 часов
+function earliestStart(){
+  const d = new Date();
+  const cur = d.getHours() * 60 + d.getMinutes();
+  return Math.ceil((cur + MIN_LEAD_MIN) / 30) * 30;
+}
+function timeSlots(){
+  const today = state.date === new Date().toISOString().slice(0, 10);
+  const first = today ? earliestStart() : 0;
+  const out = [];
+  for (let m = Math.max(0, first); m <= 23 * 60 + 30; m += 30)
+    out.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
+  return out;
+}
+/* время окончания: минимум на 3 часа позже начала */
+function endSlots(){
+  const slots = timeSlots();
+  if (!slots.length) return [];
+  const idx = slots.indexOf(state.from);
+  if (idx < 0) return [];
+  const startMin = Number(state.from.slice(0,2)) * 60 + Number(state.from.slice(3));
+  const out = [];
+  for (let m = Math.ceil((startMin + MIN_INTERVAL) / 30) * 30; m <= 23 * 60 + 30; m += 30)
+    out.push(String(Math.floor(m/60)).padStart(2,"0") + ":" + String(m%60).padStart(2,"0"));
+  return out;
+}
+function minutes(t){ return t ? Number(t.slice(0,2)) * 60 + Number(t.slice(3)) : NaN; }
+
+function scheduleHint(){
+  const slots = timeSlots();
+  if (!slots.length) return "На сегодня свободных интервалов больше нет — доставка возможна минимум через 4 часа. Выберите завтрашний день.";
+  if (state.date < new Date().toISOString().slice(0, 10)) return "Дата доставки уже прошла — выберите сегодняшний или более поздний день.";
+  const a = state.from, b = state.to;
+  if (a && a < slots[0]) return "Доставку оформляют минимум за 4 часа. На сегодня доступно время с " + slots[0] + ".";
+  if (a && b) {
+    if (b <= a) return "Время «до» должно быть позже времени «с».";
+    if (minutes(b) - minutes(a) < MIN_INTERVAL) return "Интервал доставки — не меньше 3 часов. Увеличьте время «до».";
+  }
+  return "";
+}
+function scheduleOk(){
+  const slots = timeSlots();
+  if (!slots.length) return false;
+  if (state.date < new Date().toISOString().slice(0, 10)) return false;
+  if (!state.from || !state.to) return false;
+  if (state.from < slots[0]) return false;
+  if (minutes(state.to) - minutes(state.from) < MIN_INTERVAL) return false;
+  return true;
+}
+/* если на сегодня слотов нет — переносим на завтра и подставляем ближайшее время */
+function normalizeSchedule(){
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.date === today && !timeSlots().length){
+    const t = new Date(Date.now() + 86400000);
+    state.date = t.toISOString().slice(0, 10);
+  }
+  const slots = timeSlots();
+  if (slots.length && !slots.includes(state.from)) state.from = slots[0];
+  const ends = endSlots();
+  if (ends.length && !ends.includes(state.to)) state.to = ends[0];
+}
+
+/* маска телефона: 8926... -> +7 (926) ...-..-.. */
+function maskPhone(input){
+  let d = String(input).replace(/\D/g, "");
+  if (!d) return "";
+  if (d[0] === "8" || d[0] === "7") d = d.slice(1);
+  d = d.slice(0, 10);
+  let out = "+7";
+  if (d.length) out += " (" + d.slice(0, 3);
+  if (d.length > 3) out += ") " + d.slice(3, 6);
+  if (d.length > 6) out += "-" + d.slice(6, 8);
+  if (d.length > 8) out += "-" + d.slice(8, 10);
+  return out;
+}
+
+function orderText(){
+  const out = [];
+  out.push("Дата: " + fmtDate());
+  out.push("Адрес: " + (state.address.trim() || "уточнить"));
+  out.push("Время: с " + state.from + " до " + state.to);
+  out.push("Вес:");
+  PRODUCTS.forEach(p => {
+    const q = state.qty[p.id] || 0;
+    out.push(q > 0 ? `${p.order} ${smart(q)} ${p.unit}` : `${p.order} -`);
+  });
+  if (state.phone.trim()) out.push("Телефон принимающего: " + state.phone.trim());
+  if (state.comment.trim()) out.push("Комментарий: " + state.comment.trim());
+  out.push("");
+  out.push("Сумма за лёд: " + fmtInt(total()) + " ₽");
+  out.push("Стоимость доставки: " + fmtInt(deliveryCost()) + " ₽");
+  out.push("Итого к оплате: " + fmtInt(total() + deliveryCost()) + " ₽");
+  if (negotiable()) out.push("Позиции «от» — цена по запросу, менеджер подтвердит.");
+  if (deliveryNote()) out.push(deliveryNote());
+  out.push("Заказ из приложения MosDomIce");
+  return out.join("\n");
+}
+
+/* --- сообщения --- */
+let toastTimer;
+function toast(title, text){
+  const t = document.getElementById("toast");
+  t.innerHTML = "<b>" + title + "</b>" + (text || "");
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 3600);
+}
+
+/* --- отрисовка --- */
+function render(){
+  const v = document.getElementById("view");
+  const titles = ["Калькулятор льда", "Заказ", "Контакты"];
+  document.getElementById("title").textContent = titles[state.tab];
+
+  const cnt = lines().length;
+  const badge = document.getElementById("badge");
+  badge.textContent = cnt;
+  badge.classList.toggle("on", cnt > 0);
+
+  document.querySelectorAll(".tab").forEach(t =>
+    t.classList.toggle("on", Number(t.dataset.tab) === state.tab));
+
+  if (state.tab === 0) v.innerHTML = viewCatalog();
+  else if (state.tab === 1) v.innerHTML = viewOrder();
+  else v.innerHTML = viewContacts();
+  v.scrollTop = 0;
+}
+
+function viewCatalog(){
+  const parts = [];
+  parts.push(`<div class="lead"><h3>Соберите заказ по фракциям</h3>
+    <p>Отметьте, сколько льда нужно. Итог появится в разделе «Заказ» — оттуда заказ уходит менеджеру.</p>`);
+  if (lines().length){
+    const units = lines().reduce((s,l) => s + l.q, 0);
+    parts.push(`<div class="done on">✓ Выбрано ${lines().length} поз. · ${smart(units)} ед.</div>`);
+  }
+  parts.push(`</div>`);
+
+  PRODUCTS.forEach(p => {
+    const q = state.qty[p.id] || 0;
+    const unitWord = p.unit;
+    const priceTag = (p.from ? "от " : "") + fmtInt(p.price) + " ₽/" + unitWord;
+    const sum = q === 0 ? "" : (p.from ? '<div class="sum">по запросу</div>'
+                                       : '<div class="sum">' + fmtInt(q * p.price) + " ₽</div>");
+    const del = q ? '<button class="trash" data-del="' + p.id + '" title="Убрать">🗑</button>' : "";
+    const open = state.expanded[p.id];
+    parts.push(`
+      <div class="card${q ? " chosen" : ""}">
+        <div class="photo" style="background-image:url('${IMG[p.img]}')">
+          <div class="pricetag">${priceTag}</div>
+        </div>
+        <div class="body">
+          <div class="pname">${p.name}</div>
+          <div class="pdesc">${p.sum}</div>
+          <div class="more" data-more="${p.id}">${open ? "Свернуть" : "Подробнее о фракции"}</div>
+          <div class="details${open ? " on" : ""}">${p.details.map(d => "<div>" + d + "</div>").join("")}</div>
+          <div class="counter">
+            <button class="step${q ? "" : " off"}" data-step="${p.id}" data-dir="-1">−</button>
+            <div class="qty"><b>${q ? smart(q) : 0}</b><span>${unitWord}</span></div>
+            <button class="step" data-step="${p.id}" data-dir="1">+</button>
+            <div class="grow"></div>
+            ${sum}${del}
+          </div>
+        </div>
+      </div>`);
+  });
+  return parts.join("");
+}
+
+/* подсказка о положении адреса относительно МКАД */
+function kmHint(){
+  if (state.kmStatus === "search") return '<div class="note">Ищем адрес на карте…</div>';
+  if (state.kmStatus === "fail") return '<div class="note">Не удалось определить адрес. Уточните улицу, дом и город.</div>';
+  if (state.km > 0) return '<div class="note">Адрес за МКАД: ' + smart(state.km) + ' км — к доставке + ' + fmtInt(state.km * KM_PRICE) + ' ₽</div>';
+  if (state.kmStatus === "ok") return '<div class="note">Адрес в пределах МКАД</div>';
+  return "";
+}
+
+function viewOrder(){
+  normalizeSchedule();
+  if (!lines().length){
+    return `<div class="empty"><div class="cube">◇</div>
+      <h3>Заказ пока пуст</h3>
+      <p>Откройте «Калькулятор», укажите нужные фракции и вес — здесь появится готовый заказ.</p></div>`;
+  }
+  const rows = lines().map(l => `
+    <div class="row">
+      <div class="thumb" style="background-image:url('${IMG[l.p.img]}')"></div>
+      <div class="rowtxt"><b>${l.p.name}</b><span>${smart(l.q)} ${l.p.unit} · ${fmtInt(l.p.price)} ₽/${l.p.unit}</span></div>
+      <div class="grow"></div>
+      <div class="sum">${l.p.from ? "по запросу" : fmtInt(l.q * l.p.price) + " ₽"}</div>
+      <button class="trash" data-del="${l.p.id}">✕</button>
+    </div>`).join("");
+
+  const notes = [];
+  if (negotiable()) notes.push("Позиции «от» — цена по запросу, менеджер подтвердит после заявки.");
+  if (deliveryNote()) notes.push(deliveryNote());
+
+  return `
+    <div class="sec"><h4>Состав заказа</h4>${rows}
+      <button class="clear" data-clear>Очистить заказ</button></div>
+
+    <div class="sec"><h4>Доставка</h4>
+      <div class="field"><span class="ico">▦</span><input type="date" id="f-date" min="${new Date().toISOString().slice(0,10)}" value="${state.date}"></div>
+      <div class="two">
+        <label><span class="mini">Время с</span>
+          <div class="box"><select id="f-from">${timeSlots().map(t => `<option${t === state.from ? " selected" : ""}>${t}</option>`).join("")}</select></div></label>
+        <label><span class="mini">до</span>
+          <div class="box"><select id="f-to">${endSlots().map(t => `<option${t === state.to ? " selected" : ""}>${t}</option>`).join("")}</select></div></label>
+      </div>
+      ${scheduleHint() ? '<div class="note">' + scheduleHint() + '</div>' : ""}
+      <div class="field"><span class="ico">◉</span>
+        <input id="f-address" placeholder="Адрес доставки" value="${state.address}">
+        <button class="mini-btn" id="geo">Я здесь</button></div>
+      ${kmHint()}
+      <div class="field"><span class="ico">✆</span>
+        <input id="f-phone" type="tel" inputmode="tel" maxlength="18" placeholder="+7 (___) ___-__-__" value="${state.phone}"></div>
+      <div class="field" style="margin-bottom:0"><span class="ico">▤</span>
+        <input id="f-comment" placeholder="Комментарий (домофон, этаж, пожелания)" value="${state.comment}"></div>
+    </div>
+
+    <div class="sec"><h4>Итог</h4>
+      <div class="total"><span>Сумма за лёд</span><b>${fmtInt(total())} ₽</b></div>
+      <div class="total"><span>Стоимость доставки</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
+      <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
+        <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(total() + deliveryCost())} ₽</b></div>
+      ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
+      <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Просто заказать</button>
+      <button class="link" id="preview">Посмотреть текст заказа</button>
+    </div>`;
+}
+
+function viewContacts(){
+  return `
+    <div class="sec" style="padding:11px">
+      <div class="map">
+        <div class="grid"></div><div class="road"></div><div class="river"></div>
+        <div class="pin"><div class="dot">*</div><b>Склад MosDomIce</b></div>
+        <div class="lbl">Яндекс Карты · Угрешская, 2, стр. 15</div>
+      </div>
+      <a class="route" href="yandexnavi://build_route_on_map?lat_to=55.711832&lon_to=37.686781">Открыть в навигаторе<span class="chev">›</span></a>
+    </div>
+
+    <div class="sec"><h4>Адрес склада</h4>
+      <div class="about" style="font-size:12px;color:#fff">109089, Москва, ул. Угрешская, д. 2, стр. 15, оф. 117</div>
+      <p style="margin-top:6px"><a href="https://maps.apple.com/?q=55.711832,37.686781&ll=55.711832,37.686781" target="_blank" style="color:var(--ice);font-size:10.5px;font-weight:600;text-decoration:none">Показать на карте ›</a></p>
+      <div class="crow"><span class="ico">◔</span><div><b>Круглосуточно, 7 дней в неделю</b><span>Режим работы</span></div></div>
+      <div class="crow"><span class="ico">◈</span><div><b>м. Кожуховская</b><span>Ближайшее метро</span></div></div>
+    </div>
+
+    <div class="sec"><h4>Телефоны</h4>
+      <a class="crow" href="tel:+74954113996"><span class="ico">✆</span><div><b>+7 (495) 411-39-96</b><span>Отдел заказов</span></div><span class="chev">›</span></a>
+      <a class="crow" href="tel:+79854113996"><span class="ico">✆</span><div><b>+7 (985) 411-39-96</b><span>Мобильный</span></div><span class="chev">›</span></a>
+    </div>
+
+    <div class="sec"><h4>Написать нам</h4>
+      <a class="crow" href="https://t.me/MosDomBar" target="_blank"><span class="ico">➤</span><div><b>@MosDomBar</b><span>Telegram</span></div><span class="chev">›</span></a>
+      <a class="crow" href="https://mosdomice.com" target="_blank"><span class="ico">◍</span><div><b>mosdomice.com</b><span>Сайт</span></div><span class="chev">›</span></a>
+      <a class="crow" href="mailto:mosdombar@gmail.com"><span class="ico">✉</span><div><b>mosdombar@gmail.com</b><span>Почта</span></div><span class="chev">›</span></a>
+      <a class="crow" href="https://vk.ru/dostavkalda" target="_blank"><span class="ico">◍</span><div><b>vk.ru/dostavkalda</b><span>ВКонтакте</span></div><span class="chev">›</span></a>
+    </div>
+
+    <div class="sec"><h4>Реквизиты</h4>
+      <div class="about"><b>ООО «Мир бармена»</b>
+        ИНН 7720650439 · ОГРН 1207700493076<br>
+        Производство и доставка пищевого льда по Москве и МО.
+        <div class="ver">Московский Дом Бармена (MosDomIce)</div></div>
+    </div>`;
+}
+
+/* --- взаимодействие --- */
+document.addEventListener("click", e => {
+  const t = e.target;
+
+  const tab = t.closest(".tab");
+  if (tab){ state.tab = Number(tab.dataset.tab); render(); return; }
+
+  const step = t.closest("[data-step]");
+  if (step){
+    const p = PRODUCTS.find(x => x.id === step.dataset.step);
+    const dir = Number(step.dataset.dir);
+    const cur = state.qty[p.id] || 0;
+    let next = cur + dir * p.step;
+    if (next <= 0){ delete state.qty[p.id]; } else { state.qty[p.id] = next; }
+    render(); return;
+  }
+
+  const del = t.closest("[data-del]");
+  if (del){ delete state.qty[del.dataset.del]; render(); return; }
+
+  const more = t.closest("[data-more]");
+  if (more){ state.expanded[more.dataset.more] = !state.expanded[more.dataset.more]; render(); return; }
+
+  if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
+
+
+  if (t.closest("#geo")){ locateMe(); return; }
+  if (t.closest("#preview")){
+    showText(); return;
+  }
+  if (t.closest("#send") || t.closest("#share") || t.closest("#copy")){
+    copyText(); toast("Заказ отправлен", "В приложении заказ уходит менеджеру одним нажатием.");
+    return;
+  }
+});
+
+function copyText(){
+  const text = orderText();
+  try { navigator.clipboard.writeText(text); } catch(_){}
+  return text;
+}
+
+function showText(){
+  state.tab = 1;
+  const v = document.getElementById("view");
+  document.getElementById("title").textContent = "Текст заказа";
+  v.innerHTML = `
+    <p style="color:rgba(255,255,255,.7);font-size:10.5px;padding:6px 3px 11px">Так заказ увидит менеджер</p>
+    <div class="mono">${orderText().replace(/</g,"&lt;")}</div>
+    <button class="btn" id="copy2" style="margin-top:12px">Скопировать текст</button>
+    <button class="btn2" id="back">← Вернуться к заказу</button>`;
+  document.getElementById("copy2").onclick = () => {
+    copyText(); toast("Текст заказа скопирован", "Так заказ увидит менеджер.");
+  };
+  document.getElementById("back").onclick = () => { state.tab = 1; render(); };
+}
+
+let locateTimer;
+/* «Я здесь»: координаты устройства -> адрес и километраж */
+function locateMe(){
+  if (!navigator.geolocation){
+    toast("Геопозиция недоступна", "Введите адрес вручную — он определится сам.");
+    return;
+  }
+  state.kmStatus = "search"; render();
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    state.coords = [lat, lon];
+    state.km = outsideKm(lat, lon);
+    try {
+      const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lat + "&lon=" + lon + "&accept-language=ru";
+      const res = await fetch(url, { headers: { "Accept": "application/json" } });
+      const j = await res.json();
+      const a = j.address || {};
+      const city = a.city || a.town || a.village || a.state || "";
+      const street = a.road || a.pedestrian || "";
+      const house = a.house_number ? ", " + a.house_number : "";
+      const line = [city, street + house].filter(Boolean).join(", ");
+      if (line) state.address = line;
+      state.kmStatus = "ok";
+    } catch (_) {
+      state.kmStatus = "ok";
+    }
+    render();
+  }, err => {
+    state.kmStatus = "fail";
+    render();
+    toast("Нет доступа к геопозиции", "Разрешите доступ в браузере или введите адрес вручную.");
+  }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
+/* определение адреса по карте: OpenStreetMap Nominatim + геозона МКАД */
+async function locateAddress(){
+  const q = state.address.trim();
+  if (q.length < 5){ toast("Укажите адрес", "Введите улицу, дом и город."); return; }
+  state.kmStatus = "search"; render();
+  try {
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(q);
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    const list = await res.json();
+    if (!list.length){ state.kmStatus = "fail"; state.km = 0; render(); return; }
+    const lat = parseFloat(list[0].lat), lon = parseFloat(list[0].lon);
+    state.coords = [lat, lon];
+    state.km = outsideKm(lat, lon);
+    state.kmStatus = "ok";
+  } catch (_) {
+    state.kmStatus = "fail"; state.km = 0;
+  }
+  render();
+}
+
+/* поля ввода сохраняются при перерисовке */
+document.addEventListener("input", e => {
+  const id = e.target.id;
+  const val = e.target.value;
+  if (id === "f-date") state.date = val;
+  else if (id === "f-from") state.from = val;
+  else if (id === "f-to") state.to = val;
+  else if (id === "f-address") {
+    state.address = val;
+    // адрес определяется сам: ждём паузу после ввода и считаем доставку
+    clearTimeout(locateTimer);
+    locateTimer = setTimeout(() => { locateAddress(); }, 1200);
+  }
+  else if (id === "f-phone") {
+    const masked = maskPhone(val);
+    state.phone = masked;
+    if (masked !== val) e.target.value = masked;
+  }
+  else if (id === "f-comment") state.comment = val;
+});
+
+/* живое обновление итога, когда меняются данные доставки */
+document.addEventListener("change", e => {
+  if (e.target.id === "f-date") state.date = e.target.value;
+  else if (e.target.id === "f-from") state.from = e.target.value;
+  else if (e.target.id === "f-to") state.to = e.target.value;
+  if (["f-date","f-from","f-to"].includes(e.target.id)) render();
+});
+
+render();
+
+/* переключатель вариантов брендирования (только эмулятор) */
+const VARIANT_NAMES = {a:"ВАРИАНТ A · СЕВЕРНЫЙ ЛЁД", b:"ВАРИАНТ B · ЛЕДЯНАЯ ВИТРИНА", c:"ВАРИАНТ C · БАР-БОРД"};
+/* вариант можно задать ссылкой: index.html?v=b — так удобно сравнивать рядом */
+(function(){
+  const v = new URLSearchParams(location.search).get("v");
+  if (v && ["a","b","c"].includes(v)){
+    document.querySelector(".screen").dataset.theme = v;
+    document.getElementById("varcap").textContent = VARIANT_NAMES[v];
+    document.querySelectorAll(".sw").forEach(b => b.classList.toggle("on", b.dataset.variant === v));
+  }
+})();
+
+document.querySelectorAll(".sw").forEach(btn => btn.addEventListener("click", () => {
+  const v = btn.dataset.variant;
+  document.querySelector(".screen").dataset.theme = v;
+  document.getElementById("varcap").textContent = VARIANT_NAMES[v];
+  document.querySelectorAll(".sw").forEach(b => b.classList.toggle("on", b === btn));
+}));
+</script>
+</body></html>
