@@ -237,6 +237,22 @@ input[type=date]{color-scheme:var(--scheme)}
 .craftnotice p{color:var(--fg-72);font-size:10.5px;line-height:1.45;margin-bottom:6px}
 .craftnotice .cn-sum{color:var(--ice);font-size:10.5px;font-weight:700}
 
+/* список заведений рядом с адресом */
+.vbox{background:var(--fill);border-radius:14px;padding:11px;margin-bottom:9px}
+.vbox .vhead{font-size:10.5px;font-weight:700;color:var(--fg-72);line-height:1.4;margin-bottom:8px}
+.vbox .vhead.on{color:#4ade80}
+.vrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font-family:inherit;
+  background:var(--fill-2);border:1px solid transparent;border-radius:10px;padding:8px 9px;margin-bottom:5px;cursor:pointer}
+.vrow.on{background:var(--hl-bg);border-color:var(--accent)}
+.vrow .vtick{color:var(--fg-45);font-size:11px;flex:none}
+.vrow.on .vtick{color:#4ade80}
+.vrow .vtxt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.vrow .vtxt b{font-size:10.5px;font-weight:600;color:var(--fg);line-height:1.3}
+.vrow .vtxt i{font-style:normal;font-size:9.5px;color:var(--fg-45)}
+.vrow .voff{margin-left:auto;color:#4ade80;font-size:10px;font-weight:700;flex:none}
+.vbox .vclear{background:none;border:none;font-family:inherit;color:var(--fg-45);font-size:9.5px;
+  cursor:pointer;padding:2px 0;margin-top:2px}
+
 /* переключатель темы в «Контактах» */
 /* контакты */
 .ok{display:flex;align-items:center;gap:7px;margin-bottom:11px}
@@ -335,7 +351,7 @@ input[type=date]{color-scheme:var(--scheme)}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">16.10.2026 18:41</b></div>
+  <div class="verline" id="version">версия от <b id="ver">16.10.2026 19:11</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
@@ -390,8 +406,9 @@ const state = {
   from: "10:00", to: "17:00",
   address: "", phone: "", comment: "", km: 0, coords: null, kmStatus: "",
   expanded: {},
-  venue: null,          // название заведения с карты
-  venueStatus: "",      // "" | searching | found | none | fail
+  venue: null,          // выбранное заведение с карты
+  venues: [],           // найденные рядом заведения
+  venueStatus: "",      // "" | searching | results | none | fail
   craftNotice: false,   // предупреждение о ручной работе
   craftNoticeShown: false,
 };
@@ -473,12 +490,13 @@ function metersBetween(lat1, lon1, lat2, lon2){
   const dx = (lon1 - lon2) * kx, dy = lat1 - lat2;
   return Math.sqrt(dx * dx + dy * dy) * 111195;
 }
+/* список заведений рядом с адресом: ближайшие первыми */
 async function findVenuePhoton(lat, lon){
-  const url = PHOTON + "?lat=" + lat + "&lon=" + lon + "&limit=30&radius=" + VENUE_RADIUS_KM;
+  const url = PHOTON + "?lat=" + lat + "&lon=" + lon + "&limit=50&radius=" + VENUE_RADIUS_KM;
   const res = await fetch(url);
   if (!res.ok) throw new Error("photon " + res.status);
   const j = await res.json();
-  let best = null;
+  const out = [];
   for (const f of (j.features || [])){
     const pr = f.properties || {}, g = f.geometry || {};
     if (pr.osm_key !== "amenity" || VENUE_CATS.indexOf(pr.osm_value) < 0) continue;
@@ -486,10 +504,9 @@ async function findVenuePhoton(lat, lon){
     if (c.length !== 2) continue;
     const d = metersBetween(lat, lon, c[1], c[0]);
     if (d > VENUE_RADIUS_M) continue;
-    if (!best || d < best.d) best = {d: d, name: pr.name || "", kind: VENUE_RU[pr.osm_value] || pr.osm_value};
+    out.push({d: d, name: pr.name || "", kind: VENUE_RU[pr.osm_value] || pr.osm_value});
   }
-  if (!best) return null;
-  return best.name ? best.name : best.kind;
+  return cleanVenues(out);
 }
 async function findVenueOverpass(lat, lon){
   const cats = VENUE_CATS.join("|");
@@ -497,25 +514,48 @@ async function findVenueOverpass(lat, lon){
   const q = '[out:json][timeout:10];(' +
     'node(around:' + r + ',' + lat + ',' + lon + ')[amenity~"^(' + cats + ')$"];' +
     'way(around:' + r + ',' + lat + ',' + lon + ')[amenity~"^(' + cats + ')$"];' +
-    ');out center 10;';
+    ');out center 20;';
   for (const host of OVERPASS_HOSTS){
     try {
       const res = await fetch(host + "?data=" + encodeURIComponent(q));
       if (!res.ok) continue;
       const j = await res.json();
-      const els = j.elements || [];
-      if (!els.length) return null;
-      const el = els[0], tags = el.tags || {};
-      const kind = VENUE_RU[tags.amenity] || tags.amenity;
-      return tags.name ? tags.name : kind;
+      const out = [];
+      for (const el of (j.elements || [])){
+        const tags = el.tags || {};
+        if (VENUE_CATS.indexOf(tags.amenity) < 0) continue;
+        const c = el.center ? [el.center.lon, el.center.lat] : (el.lon !== undefined ? [el.lon, el.lat] : null);
+        if (!c) continue;
+        const d = metersBetween(lat, lon, c[1], c[0]);
+        if (d > VENUE_RADIUS_M) continue;
+        out.push({d: d, name: tags.name || "", kind: VENUE_RU[tags.amenity] || tags.amenity});
+      }
+      return cleanVenues(out);
     } catch (_) { }
   }
-  return undefined;   /* карта недоступна */
+  return [];   /* карта недоступна */
 }
-async function findVenue(lat, lon){
+/* убираем повторы и сортируем по расстоянию */
+function cleanVenues(list){
+  const seen = {}, out = [];
+  list.sort((a, b) => a.d - b.d);
+  for (const v of list){
+    const key = venueTitle(v) + "|" + Math.round(v.d);
+    if (seen[key]) continue;
+    seen[key] = 1;
+    out.push(v);
+  }
+  return out;
+}
+function venueTitle(v){ return v.name ? v.kind + " «" + v.name + "»" : v.kind; }
+function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function venueDistance(v){
+  return v.d < 1000 ? Math.round(v.d) + " м" : (v.d / 1000).toFixed(1).replace(".", ",") + " км";
+}
+async function findVenues(lat, lon){
   try {
     const hit = await findVenuePhoton(lat, lon);
-    if (hit !== undefined) return hit;
+    if (hit && hit.length) return hit;
   } catch (_) { }
   return await findVenueOverpass(lat, lon);
 }
@@ -720,13 +760,28 @@ function viewCatalog(){
 }
 
 /* подсказка о положении адреса относительно МКАД */
-/* что нашлось на карте по адресу */
+/* список заведений рядом с адресом: скидка — только после выбора */
 function venueHint(){
-  if (state.venueStatus === "searching") return '<div class="note">Смотрим на карте, что находится по адресу…</div>';
-  if (state.venueStatus === "found") return '<div class="note">По карте здесь заведение: ' + state.venue + '. Скидка 15% применится.</div>';
-  if (state.venueStatus === "none") return '<div class="note">Заведения по этому адресу на карте нет — скидка не применяется.</div>';
-  if (state.venueStatus === "fail") return '<div class="note">Не удалось проверить карту. Повторите позже.</div>';
-  return "";
+  if (state.venueStatus === "searching")
+    return '<div class="note">Ищем заведения по этому адресу…</div>';
+  if (state.venueStatus === "none")
+    return '<div class="note">Заведений рядом с этим адресом на карте нет — скидка не применяется.</div>';
+  if (state.venueStatus === "fail")
+    return '<div class="note">Не удалось проверить заведения по карте. Скидка не применяется.</div>';
+  if (state.venueStatus !== "results") return "";
+  const rows = state.venues.map(v => {
+    const on = state.venue === venueTitle(v);
+    return '<button class="vrow' + (on ? ' on' : '') + '" data-venue="' + esc(venueTitle(v)) + '">' +
+      '<span class="vtick">' + (on ? "&#10003;" : "&#9675;") + '</span>' +
+      '<span class="vtxt"><b>' + esc(venueTitle(v)) + '</b><i>до адреса ' + venueDistance(v) + '</i></span>' +
+      (on ? '<span class="voff">&#8722;15%</span>' : "") + '</button>';
+  }).join("");
+  const head = state.venue
+    ? "Заведение выбрано — скидка 15% применена"
+    : "Рядом с адресом есть заведения. Выберите своё — дадим скидку 15%";
+  const clear = state.venue ? '<button class="vclear" data-venue-clear>Убрать заведение и скидку</button>' : "";
+  return '<div class="vbox"><div class="vhead' + (state.venue ? ' on' : '') + '">' + head + '</div>' +
+    rows + clear + '</div>';
 }
 
 function kmHint(){
@@ -796,7 +851,7 @@ function viewOrder(){
       <div class="total"><span>Стоимость доставки</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
         <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(discountedTotal() + deliveryCost())} ₽</b></div>
-      ${isHoReCa() ? '<div class="note">Скидка 15% применена заведению «' + state.venue + '». Доставка считается отдельно.</div>' : ""}
+      ${isHoReCa() ? '<div class="note">Скидка 15% применена заведению ' + esc(state.venue) + '. Доставка считается отдельно.</div>' : ""}
       ${craftUnits() > 0 ? '<div class="note">Крафтовый лёд — ручная работа: ' + smart(craftUnits()) + ' шт, изготовление ' + craftLeadDays() + ' дн. Ближайшая доставка — ' + fmtRu(minCraftDate()) + '.</div>' : ""}
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
       <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Просто заказать</button>
@@ -869,6 +924,14 @@ document.addEventListener("click", e => {
 
 
   if (t.closest("[data-craft-close]")){ state.craftNotice = false; state.craftNoticeShown = true; render(); return; }
+
+  const vrow = t.closest("[data-venue]");
+  if (vrow){
+    const title = vrow.dataset.venue;
+    state.venue = (state.venue === title) ? null : title;
+    render(); return;
+  }
+  if (t.closest("[data-venue-clear]")){ state.venue = null; render(); return; }
 
   const themeBtn = t.closest("[data-theme-btn]");
   if (themeBtn){ setTheme(themeBtn.dataset.themeBtn); return; }
@@ -961,12 +1024,20 @@ async function locateAddress(){
   render();
 }
 
-/* проверяем по карте, что в этой точке — заведение, и пересчитываем скидку */
+/* ищем заведения рядом с точкой: скидку включает только выбор из списка */
 async function checkVenue(lat, lon){
-  state.venueStatus = "searching"; state.venue = null; render();
-  const name = await findVenue(lat, lon);
-  state.venue = (name === undefined) ? null : name;
-  state.venueStatus = (name === undefined) ? "fail" : (name ? "found" : "none");
+  const wasSelected = state.venue;
+  state.venueStatus = "searching"; state.venues = []; render();
+  const list = await findVenues(lat, lon);
+  state.venues = list || [];
+  if (!state.venues.length) {
+    state.venue = null;
+    state.venueStatus = (list === undefined) ? "fail" : "none";
+  } else {
+    /* выбор сохраняем, только если выбранное заведение снова есть в списке */
+    if (wasSelected && !state.venues.some(v => venueTitle(v) === wasSelected)) state.venue = null;
+    state.venueStatus = "results";
+  }
   render();
 }
 
@@ -979,8 +1050,8 @@ document.addEventListener("input", e => {
   else if (id === "f-to") state.to = val;
   else if (id === "f-address") {
     state.address = val;
-    // адрес изменился — прежняя скидка больше не относится к новому адресу
-    state.venue = null; state.venueStatus = "";
+    // адрес изменился — прежняя скидка и список заведений больше не относятся к новому адресу
+    state.venue = null; state.venues = []; state.venueStatus = "";
     // адрес определяется сам: ждём паузу после ввода и считаем доставку
     clearTimeout(locateTimer);
     locateTimer = setTimeout(() => { locateAddress(); }, 1200);
