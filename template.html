@@ -52,7 +52,7 @@
   --title-spacing:.1px;
 }
 
-/* --- ВАРИАНТ B · «Ледяная витрина»: светлый холодный фон, крупный логотип-печать, синие акценты === */
+/* --- ВАРИАНТ B · «Ледяная витрина»: светлый холодный фон, синие акценты === */
 .screen[data-theme="b"]{
   --bg-1:#eef5fb;--bg-2:#dbe9f6;--bg-3:#e7f1fa;--glow:rgba(120,190,235,.42);
   --fg:#0f2233;--fg-strong:#0b1a28;
@@ -78,26 +78,6 @@
   --scheme:light;
   --device-bg:#f4f8fc;--device-edge:#cddced;--device-shadow:0 26px 60px rgba(30,70,110,.35);
   --page-bg:#dce8f3;
-}
-
-/* --- ВАРИАНТ C · «Бар-борд»: тёмный графит, крупная шапка-вывеска, тёплый акцент бара === */
-.screen[data-theme="c"]{
-  --bg-1:#15171c;--bg-2:#1d2128;--bg-3:#101216;--glow:rgba(255,180,90,.14);
-  --fg-strong:#fff6ea;
-  --card:rgba(255,255,255,.05);--card-shadow:inset 0 1px 0 rgba(255,255,255,.06);
-  --line:rgba(255,255,255,.11);--fill:rgba(255,255,255,.07);--fill-2:rgba(255,255,255,.13);
-  --ice:#f6c489;--ice-soft:#ffe6c2;--accent:#f6c489;--accent-ink:#241705;
-  --hl-bg:rgba(246,196,137,.20);--step-bg:rgba(246,196,137,.22);--chip-bg:rgba(255,255,255,.09);
-  --photo-fade:rgba(16,18,22,.92);
-  --tabs-bg:rgba(12,13,16,.94);--toast-bg:rgba(40,32,20,.97);
-  --map-1:#2a2c33;--map-2:#35383f;--map-3:#1d1f24;--map-grid:rgba(246,196,137,.30);
-  --map-road:rgba(255,255,255,.28);--map-river:rgba(120,140,160,.42);
-  --map-pin:#15171c;--empty-pin:rgba(246,196,137,.8);
-  --wm-opacity:0;--wm-size:66%;--wm-pos:center 68%;
-  --bar-display:flex;--brandbar-bg:rgba(246,196,137,.10);
-  --bar-name:#ffdfb0;--bar-note:rgba(255,226,186,.6);
-  --title-size:16px;--title-weight:700;--title-spacing:2.4px;--title-transform:uppercase;
-  --device-bg:#0c0d10;--device-edge:#33363d;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -154,7 +134,9 @@ body{
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hdr .tel{background:var(--chip-bg);color:var(--chip-fg)}
 .hdr .site{background:var(--hl-bg);color:var(--ice-soft);margin-left:auto}
-.scroll{position:relative;z-index:1;flex:1;overflow-y:auto;padding:0 12px 14px;scrollbar-width:none}
+.scroll{position:relative;z-index:1;flex:1;overflow-y:auto;padding:0;scrollbar-width:none}
+#view{padding:0 12px 14px}
+.headblock{position:relative}
 .scroll::-webkit-scrollbar{display:none}
 .lead{padding:4px 3px 12px}
 .lead h3{font-size:15px;font-weight:600;margin-bottom:5px}
@@ -240,6 +222,15 @@ input[type=date]{color-scheme:var(--scheme)}
 .mono{background:var(--mono-bg);border-radius:14px;padding:13px;color:var(--mono-fg);
       font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;white-space:pre-wrap;line-height:1.5}
 
+/* переключатель темы в «Контактах» */
+.themebar{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:11px 13px;margin-bottom:10px;box-shadow:var(--card-shadow)}
+.themebar .tlabel{color:var(--fg-55);font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.seg{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:3px;margin-left:auto}
+.seg button{border:none;background:none;font-family:inherit;font-size:10.5px;font-weight:700;color:var(--fg-55);
+  padding:6px 13px;border-radius:9px;cursor:pointer;transition:.15s}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+
 /* контакты */
 .ok{display:flex;align-items:center;gap:7px;margin-bottom:11px}
 .dot{width:9px;height:9px;border-radius:50%;background:#ff9f43;flex:none}
@@ -303,18 +294,13 @@ input[type=date]{color-scheme:var(--scheme)}
   <p>Нажимайте кнопки и вводите данные — всё работает как в приложении на iPhone</p>
 </div>
 
-<div class="switcher">
-  <span>Вариант брендирования:</span>
-  <button class="sw on" data-variant="a">A · Северный лёд</button>
-  <button class="sw" data-variant="b">B · Ледяная витрина</button>
-  <button class="sw" data-variant="c">C · Бар-борд</button>
-</div>
-
 <div class="stage">
   <div class="slot">
     <div class="cap" id="varcap">ВАРИАНТ A · СЕВЕРНЫЙ ЛЁД</div>
     <div class="device"><div class="screen" data-theme="__THEME_NAME__">
       <div class="status"><span>9:41</span><span>&#9646;&#9646;&#9646; &#6310; &#9648;</span></div>
+      <div class="scroll" id="scroll">
+      <div class="headblock">
       <div class="brandbar">
         <img src="__LOGO_HEADER__" alt="">
         <div><b>МОСКОВСКИЙ ДОМ БАРМЕНА</b><span>производство и доставка льда &middot; с 2014 года</span></div>
@@ -324,7 +310,9 @@ input[type=date]{color-scheme:var(--scheme)}
         <a class="tel" href="tel:+74954113996">&#9990; +7 (495) 411-39-96</a>
         <a class="site" href="https://mosdomice.com" target="_blank">&#9678; mosdomice.com</a>
       </div>
-      <div class="scroll" id="view"></div>
+      </div>
+      <div id="view"></div>
+      </div>
       <div class="tabs">
         <button class="tab on" data-tab="0"><i>&#9671;</i>Калькулятор</button>
         <button class="tab" data-tab="1"><i>&#9776;</i>Заказ<span class="badge" id="badge">0</span></button>
@@ -385,6 +373,7 @@ const PRODUCTS = [
 
 const state = {
   tab: 0,
+  theme: "a",
   qty: {},
   date: new Date().toISOString().slice(0,10),
   from: "10:00", to: "17:00",
@@ -575,7 +564,8 @@ function render(){
   if (state.tab === 0) v.innerHTML = viewCatalog();
   else if (state.tab === 1) v.innerHTML = viewOrder();
   else v.innerHTML = viewContacts();
-  v.scrollTop = 0;
+  const sc = document.getElementById("scroll");
+  if (sc) sc.scrollTop = 0;
 }
 
 function viewCatalog(){
@@ -684,6 +674,12 @@ function viewOrder(){
 
 function viewContacts(){
   return `
+    <div class="themebar"><span class="tlabel">Тема оформления</span>
+      <div class="seg">
+        <button data-theme-btn="a"${state.theme === "a" ? ' class="on"' : ""}>A</button>
+        <button data-theme-btn="b"${state.theme === "b" ? ' class="on"' : ""}>B</button>
+      </div></div>
+
     <div class="sec" style="padding:11px">
       <div class="map">
         <div class="grid"></div><div class="road"></div><div class="river"></div>
@@ -745,6 +741,9 @@ document.addEventListener("click", e => {
 
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
 
+
+  const themeBtn = t.closest("[data-theme-btn]");
+  if (themeBtn){ setTheme(themeBtn.dataset.themeBtn); return; }
 
   if (t.closest("#geo")){ locateMe(); return; }
   if (t.closest("#preview")){
@@ -862,23 +861,25 @@ document.addEventListener("change", e => {
 
 render();
 
-/* переключатель вариантов брендирования (только эмулятор) */
-const VARIANT_NAMES = {a:"ВАРИАНТ A · СЕВЕРНЫЙ ЛЁД", b:"ВАРИАНТ B · ЛЕДЯНАЯ ВИТРИНА", c:"ВАРИАНТ C · БАР-БОРД"};
-/* вариант можно задать ссылкой: index.html?v=b — так удобно сравнивать рядом */
-(function(){
-  const v = new URLSearchParams(location.search).get("v");
-  if (v && ["a","b","c"].includes(v)){
-    document.querySelector(".screen").dataset.theme = v;
-    document.getElementById("varcap").textContent = VARIANT_NAMES[v];
-    document.querySelectorAll(".sw").forEach(b => b.classList.toggle("on", b.dataset.variant === v));
-  }
-})();
+/* тема оформления: A — «Северный лёд», B — «Ледяная витрина» */
+const VARIANT_NAMES = {a:"ВАРИАНТ A · СЕВЕРНЫЙ ЛЁД", b:"ВАРИАНТ B · ЛЕДЯНАЯ ВИТРИНА"};
 
-document.querySelectorAll(".sw").forEach(btn => btn.addEventListener("click", () => {
-  const v = btn.dataset.variant;
+function setTheme(v){
+  if (!VARIANT_NAMES[v]) return;
+  state.theme = v;
   document.querySelector(".screen").dataset.theme = v;
-  document.getElementById("varcap").textContent = VARIANT_NAMES[v];
-  document.querySelectorAll(".sw").forEach(b => b.classList.toggle("on", b === btn));
-}));
+  const cap = document.getElementById("varcap");
+  if (cap) cap.textContent = VARIANT_NAMES[v];
+  try { localStorage.setItem("mdi-theme", v); } catch(_){}
+  if (state.tab === 2) render();
+}
+
+(function initTheme(){
+  const fromURL = new URLSearchParams(location.search).get("v");
+  let saved = null;
+  try { saved = localStorage.getItem("mdi-theme"); } catch(_){}
+  const v = VARIANT_NAMES[fromURL] ? fromURL : (VARIANT_NAMES[saved] ? saved : "a");
+  setTheme(v);
+})();
 </script>
 </body></html>
