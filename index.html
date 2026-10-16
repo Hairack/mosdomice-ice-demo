@@ -143,6 +143,7 @@ body{
 }
 .brandbar img{width:30px;height:30px;object-fit:contain;flex:none;filter:var(--bar-logo-filter,none)}
 .screen[data-theme="b"] .brandbar img{filter:invert(1) brightness(.15)}
+.screen[data-theme="b"]{--pinchip-bg:rgba(255,255,255,.94)}
 .brandbar b{display:block;color:var(--bar-name);font-size:10.5px;font-weight:700;letter-spacing:.3px;line-height:1.25}
 .brandbar span{color:var(--bar-note);font-size:8.5px}
 .top{position:relative;z-index:1;padding:9px 18px 2px;text-align:center;
@@ -264,7 +265,7 @@ input[type=date]{color-scheme:var(--scheme)}
 .map .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);text-align:center}
 .map .pin .dot{width:30px;height:30px;border-radius:50%;background:var(--map-pin);border:2px solid var(--ice);
   display:flex;align-items:center;justify-content:center;color:var(--ice);font-size:14px;margin:0 auto}
-.map .pin b{display:block;margin-top:5px;font-size:9.5px;background:var(--map-pin);
+.map .pin b{display:block;margin-top:5px;font-size:9.5px;background:var(--pinchip-bg,var(--map-pin));
   border:1px solid var(--map-grid);border-radius:9px;padding:2px 7px;white-space:nowrap;color:var(--fg)}
 .map .lbl{position:absolute;left:8px;bottom:7px;color:var(--fg-45);font-size:8px}
 .route{display:flex;align-items:center;gap:9px;background:var(--accent);color:var(--accent-ink);font-weight:700;
@@ -335,7 +336,7 @@ input[type=date]{color-scheme:var(--scheme)}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">16.10.2026 15:10</b></div>
+  <div class="verline" id="version">версия от <b id="ver">16.10.2026 15:15</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
@@ -693,7 +694,7 @@ function viewContacts(){
     </div>
 
     <div class="sec"><h4>Адрес склада</h4>
-      <div class="about" style="font-size:12px;color:#fff">109089, Москва, ул. Угрешская, д. 2, стр. 15, оф. 117</div>
+      <div class="about" style="font-size:12px;color:var(--fg)">109089, Москва, ул. Угрешская, д. 2, стр. 15, оф. 117</div>
       <p style="margin-top:6px"><a href="https://maps.apple.com/?q=55.711832,37.686781&ll=55.711832,37.686781" target="_blank" style="color:var(--ice);font-size:10.5px;font-weight:600;text-decoration:none">Показать на карте ›</a></p>
       <div class="crow"><span class="ico">◔</span><div><b>Круглосуточно, 7 дней в неделю</b><span>Режим работы</span></div></div>
       <div class="crow"><span class="ico">◈</span><div><b>м. Кожуховская</b><span>Ближайшее метро</span></div></div>
