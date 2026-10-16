@@ -967,11 +967,42 @@ document.addEventListener("click", e => {
   if (t.closest("#preview")){
     showText(); return;
   }
-  if (t.closest("#send") || t.closest("#share") || t.closest("#copy")){
+  if (t.closest("#send")){
+    sendOrder(t.closest("#send"));
+    return;
+  }
+  if (t.closest("#share") || t.closest("#copy")){
     copyText(); toast("Заказ отправлен", "В приложении заказ уходит менеджеру одним нажатием.");
     return;
   }
 });
+
+
+/* Отправка заявки менеджеру через наш сервер. Из России так надёжнее, чем в Telegram. */
+const ORDER_URL = "https://ledok.store/web-order.php";
+async function sendOrder(btn){
+  const text = orderText();
+  if (btn){ btn.disabled = true; btn.textContent = "Отправляем…"; }
+  try {
+    const res = await fetch(ORDER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data && data.ok) {
+      toast("Ваш заказ принят", "Наши менеджеры свяжутся с вами в ближайшее время.");
+    } else if (data && data.error === "rate_limited") {
+      toast("Слишком много заявок", "Попробуйте отправить заказ через несколько минут.");
+    } else {
+      copyText(); toast("Заказ не ушёл", "Текст заявки скопирован — отправьте его менеджеру.");
+    }
+  } catch(_) {
+    copyText(); toast("Нет связи", "Текст заявки скопирован — отправьте его менеджеру.");
+  } finally {
+    if (btn){ btn.disabled = false; btn.textContent = "Просто заказать"; }
+  }
+}
 
 function copyText(){
   const text = orderText();

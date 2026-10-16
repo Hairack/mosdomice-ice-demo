@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Сборка эмулятора приложения «Лёд MosDomIce»: подставляет фото из Sources/Resources."""
+"""Сборка эмулятора приложения «Лёд MosDomIce»: подставляет фото из приложения."""
 import base64
 import datetime
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-APP = os.path.dirname(HERE)
-RES = os.path.join(APP, "Sources", "Resources")
+ROOT = os.path.dirname(os.path.dirname(HERE))          # ...\MosDomIce\GPT
+ASSETS = os.path.join(ROOT, "ice-app", "Sources", "Resources", "Assets.xcassets")
 PHOTOS = ["lump", "frappe", "flake", "cups", "cube5", "stick", "glass-craft", "glass-darts", "dry"]
 
 
 def data_uri(name, ext="jpg"):
     mime = "image/png" if ext == "png" else "image/jpeg"
-    with open(os.path.join(RES, name + "." + ext), "rb") as f:
+    path = os.path.join(ASSETS, name + ".imageset", name + "." + ext)
+    with open(path, "rb") as f:
         return "data:" + mime + ";base64," + base64.b64encode(f.read()).decode()
 
 
