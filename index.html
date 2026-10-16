@@ -170,6 +170,7 @@ body{
 .details div::before{content:"";width:5px;height:5px;border-radius:1px;background:var(--ice);
   margin-top:4px;flex:none;transform:rotate(45deg)}
 .counter{display:flex;align-items:center;gap:9px;margin-top:10px;padding-top:10px;border-top:1px solid var(--fg-11)}
+.qty i{display:block;font-style:normal;font-size:7.5px;color:var(--fg-45);margin-top:1px;letter-spacing:-.2px}
 .step{width:33px;height:33px;border-radius:50%;background:var(--step-bg);color:var(--ice);
       display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex:none;
       cursor:pointer;border:none;font-family:inherit;transition:transform .1s}
@@ -360,7 +361,7 @@ input[type=date]{color-scheme:var(--scheme)}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">16.10.2026 19:33</b></div>
+  <div class="verline" id="version">версия от <b id="ver">16.10.2026 19:46</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
@@ -383,12 +384,12 @@ const PRODUCTS = [
    def:20, step:10},
   {id:"cube5", name:"Ледяные кубы 5x5x5 см",   order:"Ледяных кубов 5x5x5 см",   unit:"шт", price:30,  from:false, img:"cube5",
    sum:"Прозрачный куб ручной резки под виски и крепкие напитки — тает медленно и не разбавляет.",
-   details:["Размер 5x5x5 см, резка под заказ","Прозрачный пищевой лёд из питьевой воды","Поштучно, отгрузка в день заказа"],
-   def:10, step:1},
+   details:["Размер 5x5x5 см, резка под заказ","Прозрачный пищевой лёд из питьевой воды","Заказ кратно 10 шт, отгрузка в день заказа"],
+   def:10, step:10},
   {id:"stick", name:"Ледяные стики 4x4x12 см",  order:"Ледяных стиков 4x4x12 см",  unit:"шт", price:40,  from:false, img:"stick",
    sum:"Брусок-стик длиной 12 см — вытянутая форма для стаканов хайбол и подач в колонне.",
-   details:["Размер 4x4x12 см, резка под заказ","Удобен для хайболов и ведёрных подач","Поштучно, отгрузка в день заказа"],
-   def:10, step:1},
+   details:["Размер 4x4x12 см, резка под заказ","Удобен для хайболов и ведёрных подач","Заказ кратно 10 шт, отгрузка в день заказа"],
+   def:10, step:10},
   {id:"glass-craft", name:"Крафтовые ледяные рюмки", order:"Крафтовых ледяных рюмок", unit:"шт", price:130, from:false, img:"glass-craft",
    sum:"Ледяная рюмка под шоты и десерты: держит холод до последнего глотка и не требует мытья.",
    details:["Формовая отливка под шоты и сеты","Держит напиток холодным, не размывает вкус","Заказ кратно 10 шт, партии под банкет"],
@@ -758,7 +759,8 @@ function viewCatalog(){
           <div class="details${open ? " on" : ""}">${p.details.map(d => "<div>" + d + "</div>").join("")}</div>
           <div class="counter">
             <button class="step${q ? "" : " off"}" data-step="${p.id}" data-dir="-1">−</button>
-            <div class="qty"><b>${q ? smart(q) : 0}</b><span>${unitWord}</span></div>
+            <div class="qty"><b>${q ? smart(q) : 0}</b><span>${unitWord}</span>
+              <i>${p.unit === "кг" ? "кг, кратно " + p.step : "шт, кратно " + p.step}</i></div>
             <button class="step" data-step="${p.id}" data-dir="1">+</button>
             <div class="grow"></div>
             ${sum}${del}
