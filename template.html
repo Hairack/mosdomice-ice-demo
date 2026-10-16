@@ -777,11 +777,10 @@ function venueHint(){
       (on ? '<span class="voff">&#8722;15%</span>' : "") + '</button>';
   }).join("");
   const head = state.venue
-    ? "Заведение выбрано — скидка 15% применена"
-    : "Рядом с адресом есть заведения. Выберите своё — дадим скидку 15%";
+    ? '<div class="vhead on">Заведение выбрано — скидка 15% применена</div>'
+    : "";
   const clear = state.venue ? '<button class="vclear" data-venue-clear>Убрать заведение и скидку</button>' : "";
-  return '<div class="vbox"><div class="vhead' + (state.venue ? ' on' : '') + '">' + head + '</div>' +
-    rows + clear + '</div>';
+  return '<div class="vbox">' + head + rows + clear + '</div>';
 }
 
 function kmHint(){

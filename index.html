@@ -351,7 +351,7 @@ input[type=date]{color-scheme:var(--scheme)}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">16.10.2026 19:11</b></div>
+  <div class="verline" id="version">версия от <b id="ver">16.10.2026 19:24</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
@@ -777,11 +777,10 @@ function venueHint(){
       (on ? '<span class="voff">&#8722;15%</span>' : "") + '</button>';
   }).join("");
   const head = state.venue
-    ? "Заведение выбрано — скидка 15% применена"
-    : "Рядом с адресом есть заведения. Выберите своё — дадим скидку 15%";
+    ? '<div class="vhead on">Заведение выбрано — скидка 15% применена</div>'
+    : "";
   const clear = state.venue ? '<button class="vclear" data-venue-clear>Убрать заведение и скидку</button>' : "";
-  return '<div class="vbox"><div class="vhead' + (state.venue ? ' on' : '') + '">' + head + '</div>' +
-    rows + clear + '</div>';
+  return '<div class="vbox">' + head + rows + clear + '</div>';
 }
 
 function kmHint(){
