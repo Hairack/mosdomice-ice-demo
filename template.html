@@ -21,6 +21,7 @@
   --hl-bg:rgba(140,212,242,.20);--step-bg:rgba(140,212,242,.22);
   --step-off-bg:rgba(255,255,255,.05);--step-off-fg:rgba(255,255,255,.28);
   --chip-bg:rgba(255,255,255,.10);--chip-fg:#ffffff;
+  --opt-bg:#0d2438;--opt-fg:#eaf4ff;
   --photo-fade:rgba(6,16,27,.90);
   --tabs-bg:rgba(5,11,19,.90);--toast-bg:rgba(12,30,50,.97);--toast-fg:#eaf4ff;
   --mono-bg:rgba(0,0,0,.42);--mono-fg:#e9f5ff;
@@ -67,6 +68,7 @@
   --hl-bg:rgba(29,110,168,.14);--step-bg:rgba(29,110,168,.16);
   --step-off-bg:rgba(15,34,51,.06);--step-off-fg:rgba(15,34,51,.32);
   --chip-bg:rgba(15,34,51,.08);--chip-fg:#0f2233;
+  --opt-bg:#ffffff;--opt-fg:#0f2233;
   --photo-fade:rgba(10,30,48,.55);
   --tabs-bg:rgba(255,255,255,.94);--toast-bg:rgba(12,40,64,.96);--toast-fg:#eef7ff;
   --mono-bg:rgba(15,34,51,.06);--mono-fg:#0f2233;
@@ -207,7 +209,9 @@ body{
 .mini{color:var(--fg-55);font-size:8.5px;margin-bottom:3px;display:block}
 .box{background:var(--fill);border-radius:11px;padding:8px 10px}
 .box input{background:none;border:none;outline:none;color:var(--fg);font-size:12px;width:100%;font-family:inherit}
-select{background:none;border:none;outline:none;color:var(--fg);font-size:12px;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
+select{background:none;border:none;outline:none;color:var(--fg);font-size:12px;width:100%;font-family:inherit;
+  -webkit-appearance:none;appearance:none;color-scheme:var(--scheme)}
+select option{background:var(--opt-bg);color:var(--opt-fg)}
 input[type=date]{color-scheme:var(--scheme)}
 .total{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px}
 .total span{color:var(--fg-78);font-size:13px}
