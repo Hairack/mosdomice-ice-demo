@@ -252,6 +252,11 @@ input[type=date]{color-scheme:var(--scheme)}
 .vrow .voff{margin-left:auto;color:#4ade80;font-size:10px;font-weight:700;flex:none}
 .vbox .vclear{background:none;border:none;font-family:inherit;color:var(--fg-45);font-size:9.5px;
   cursor:pointer;padding:2px 0;margin-top:2px}
+.vbox .vlinks{display:flex;gap:14px;align-items:center;margin-top:3px}
+.vbox .vchange{background:none;border:none;font-family:inherit;color:var(--ice);font-size:9.5px;
+  font-weight:600;cursor:pointer;padding:2px 0}
+.vbox .vchange:hover{text-decoration:underline}
+.vbox .vrow.picked{margin-bottom:0;cursor:default}
 
 /* переключатель темы в «Контактах» */
 /* контакты */
@@ -408,6 +413,7 @@ const state = {
   expanded: {},
   venue: null,          // выбранное заведение с карты
   venues: [],           // найденные рядом заведения
+  venueListOpen: true,  // список заведений развёрнут
   venueStatus: "",      // "" | searching | results | none | fail
   craftNotice: false,   // предупреждение о ручной работе
   craftNoticeShown: false,
@@ -769,6 +775,7 @@ function venueHint(){
   if (state.venueStatus === "fail")
     return '<div class="note">Не удалось проверить заведения по карте. Скидка не применяется.</div>';
   if (state.venueStatus !== "results") return "";
+  const chosen = state.venues.find(v => venueTitle(v) === state.venue);
   const rows = state.venues.map(v => {
     const on = state.venue === venueTitle(v);
     return '<button class="vrow' + (on ? ' on' : '') + '" data-venue="' + esc(venueTitle(v)) + '">' +
@@ -776,11 +783,18 @@ function venueHint(){
       '<span class="vtxt"><b>' + esc(venueTitle(v)) + '</b><i>до адреса ' + venueDistance(v) + '</i></span>' +
       (on ? '<span class="voff">&#8722;15%</span>' : "") + '</button>';
   }).join("");
-  const head = state.venue
-    ? '<div class="vhead on">Заведение выбрано — скидка 15% применена</div>'
-    : "";
-  const clear = state.venue ? '<button class="vclear" data-venue-clear>Убрать заведение и скидку</button>' : "";
-  return '<div class="vbox">' + head + rows + clear + '</div>';
+  /* выбрали заведение — список сворачивается сам */
+  if (chosen && !state.venueListOpen){
+    const links = '<div class="vlinks"><button class="vchange" data-venue-toggle>Изменить заведение</button>' +
+      '<button class="vclear" data-venue-clear>Убрать скидку</button></div>';
+    return '<div class="vbox">' +
+      '<div class="vrow on picked"><span class="vtick">&#10003;</span>' +
+      '<span class="vtxt"><b>' + esc(venueTitle(chosen)) + '</b><i>скидка 15% применена</i></span>' +
+      '<span class="voff">&#8722;15%</span></div>' + links + '</div>';
+  }
+  const head = chosen ? '<div class="vhead on">Заведение выбрано — скидка 15% применена</div>' : "";
+  const collapse = chosen ? '<div class="vlinks"><button class="vchange" data-venue-toggle>Свернуть список</button></div>' : "";
+  return '<div class="vbox">' + head + rows + collapse + '</div>';
 }
 
 function kmHint(){
@@ -928,9 +942,11 @@ document.addEventListener("click", e => {
   if (vrow){
     const title = vrow.dataset.venue;
     state.venue = (state.venue === title) ? null : title;
+    state.venueListOpen = false;   /* выбрали — список сворачивается */
     render(); return;
   }
-  if (t.closest("[data-venue-clear]")){ state.venue = null; render(); return; }
+  if (t.closest("[data-venue-toggle]")){ state.venueListOpen = !state.venueListOpen; render(); return; }
+  if (t.closest("[data-venue-clear]")){ state.venue = null; state.venueListOpen = true; render(); return; }
 
   const themeBtn = t.closest("[data-theme-btn]");
   if (themeBtn){ setTheme(themeBtn.dataset.themeBtn); return; }
@@ -1026,7 +1042,7 @@ async function locateAddress(){
 /* ищем заведения рядом с точкой: скидку включает только выбор из списка */
 async function checkVenue(lat, lon){
   const wasSelected = state.venue;
-  state.venueStatus = "searching"; state.venues = []; render();
+  state.venueStatus = "searching"; state.venues = []; state.venueListOpen = true; render();
   const list = await findVenues(lat, lon);
   state.venues = list || [];
   if (!state.venues.length) {
@@ -1050,7 +1066,7 @@ document.addEventListener("input", e => {
   else if (id === "f-address") {
     state.address = val;
     // адрес изменился — прежняя скидка и список заведений больше не относятся к новому адресу
-    state.venue = null; state.venues = []; state.venueStatus = "";
+    state.venue = null; state.venues = []; state.venueListOpen = true; state.venueStatus = "";
     // адрес определяется сам: ждём паузу после ввода и считаем доставку
     clearTimeout(locateTimer);
     locateTimer = setTimeout(() => { locateAddress(); }, 1200);
