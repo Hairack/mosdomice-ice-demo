@@ -31,9 +31,11 @@ def main():
     images = "{" + ",".join('"%s":"%s"' % (n, data_uri(n)) for n in PHOTOS) + "}"
     stamp = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
     logo = data_uri("logomark", "png")
+    logo_dark = data_uri("logo", "png")
     calc = calc_uri()
     html = (html.replace("__IMG__", images)
                 .replace("__LOGO__", logo)
+                .replace("__LOGO_DARK__", logo_dark)
                 .replace("__CALC__", calc)
                 .replace("__LOGO_HEADER__", logo)
                 .replace("__THEME_NAME__", "a")
