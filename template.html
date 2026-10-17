@@ -494,8 +494,21 @@ function craftDateHint(){
   const d = craftLeadDays();
   return "Крафтовый лёд изготавливают " + d + " дн. Ближайшая доставка — " + fmtRu(minCraftDate()) + ".";
 }
-const HORECA_RATE = 0.15;
+const HORECA_RATE = 0.10;
+const PROMO_KEYWORD = "барменымосквы";
+const PROMO_RATE = 0.18;
 function isHoReCa(){ return !!state.venue; }
+function commentNorm(){ return (state.comment || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ""); }
+function hasPromoCode(){ return commentNorm().includes(PROMO_KEYWORD); }
+function venueRate(){ return isHoReCa() ? HORECA_RATE : 0; }
+function promoRate(){ return hasPromoCode() ? PROMO_RATE : 0; }
+/* скидки не суммируются: берём максимальную */
+function discountRate(){ return Math.max(venueRate(), promoRate()); }
+function discountLabel(){
+  if (promoRate() >= venueRate() && hasPromoCode()) return "Промокод «барменымосквы»";
+  if (isHoReCa()) return "Бар, кафе, ресторан";
+  return "";
+}
 /* ищем на карте, что находится в этой точке: бар, кафе, ресторан и т. п. */
 const VENUE_CATS = ["bar","pub","cafe","restaurant","nightclub","biergarten","food_court"];
 const VENUE_RU = {bar:"бар", pub:"паб", cafe:"кафе", restaurant:"ресторан",
@@ -581,7 +594,7 @@ async function findVenues(lat, lon){
   } catch (_) { }
   return await findVenueOverpass(lat, lon);
 }
-function discountAmount(){ return isHoReCa() ? total() * HORECA_RATE : 0; }
+function discountAmount(){ return total() * discountRate(); }
 function discountedTotal(){ return total() - discountAmount(); }
 /* доставка: до 5 000 ₽ — 1 000 ₽ по МКАД, за МКАД +100 ₽/км */
 function deliveryCost(){
@@ -699,10 +712,12 @@ function orderText(){
   if (state.comment.trim()) out.push("Комментарий: " + state.comment.trim());
   out.push("");
   out.push("Сумма за лёд: " + fmtInt(total()) + " ₽");
-  if (discountAmount() > 0) out.push("Скидка 15% (бар, кафе, ресторан): −" + fmtInt(discountAmount()) + " ₽");
+  if (discountAmount() > 0) out.push("Скидка " + Math.round(discountRate()*100) + "% (" + discountLabel() + "): −" + fmtInt(discountAmount()) + " ₽");
   out.push("Стоимость доставки: " + fmtInt(deliveryCost()) + " ₽");
   out.push("Итого к оплате: " + fmtInt(discountedTotal() + deliveryCost()) + " ₽");
-  if (isHoReCa()) out.push("Заведение по карте: " + state.venue + " — скидка 15% применена");
+  if (venueRate() > 0) out.push("Заведение по карте: " + state.venue + " — скидка 10% применена");
+if (hasPromoCode()) out.push("Промокод «барменымосквы» — скидка 18% применена");
+if (isHoReCa() && hasPromoCode()) out.push("Скидки не суммируются: применена максимальная (18%).");
   if (negotiable()) out.push("Позиции «от» — цена по запросу, менеджер подтвердит.");
   if (deliveryNote()) out.push(deliveryNote());
   out.push("Заказ из приложения MosDomIce");
@@ -798,7 +813,7 @@ function venueHint(){
     return '<button class="vrow' + (on ? ' on' : '') + '" data-venue="' + esc(venueTitle(v)) + '">' +
       '<span class="vtick">' + (on ? "&#10003;" : "&#9675;") + '</span>' +
       '<span class="vtxt"><b>' + esc(venueTitle(v)) + '</b><i>до адреса ' + venueDistance(v) + '</i></span>' +
-      (on ? '<span class="voff">&#8722;15%</span>' : "") + '</button>';
+      (on ? '<span class="voff">&#8722;10%</span>' : "") + '</button>';
   }).join("");
   /* выбрали заведение — список сворачивается сам */
   if (chosen && !state.venueListOpen){
@@ -806,10 +821,10 @@ function venueHint(){
       '<button class="vclear" data-venue-clear>Убрать скидку</button></div>';
     return '<div class="vbox">' +
       '<div class="vrow on picked"><span class="vtick">&#10003;</span>' +
-      '<span class="vtxt"><b>' + esc(venueTitle(chosen)) + '</b><i>скидка 15% применена</i></span>' +
-      '<span class="voff">&#8722;15%</span></div>' + links + '</div>';
+      '<span class="vtxt"><b>' + esc(venueTitle(chosen)) + '</b><i>скидка 10% применена</i></span>' +
+      '<span class="voff">&#8722;10%</span></div>' + links + '</div>';
   }
-  const head = chosen ? '<div class="vhead on">Заведение выбрано — скидка 15% применена</div>' : "";
+  const head = chosen ? '<div class="vhead on">Заведение выбрано — скидка 10% применена</div>' : "";
   const collapse = chosen ? '<div class="vlinks"><button class="vchange" data-venue-toggle>Свернуть список</button></div>' : "";
   return '<div class="vbox">' + head + rows + collapse + '</div>';
 }
@@ -840,10 +855,6 @@ function viewOrder(){
       <div class="sum">${l.p.from ? "по запросу" : fmtInt(l.q * l.p.price) + " ₽"}</div>
       <button class="trash" data-del="${l.p.id}">✕</button>
     </div>`).join("");
-
-  const notes = [];
-  if (negotiable()) notes.push("Позиции «от» — цена по запросу, менеджер подтвердит после заявки.");
-  if (deliveryNote()) notes.push(deliveryNote());
 
   return `
     ${state.craftNotice ? `<div class="craftnotice">
@@ -877,13 +888,25 @@ function viewOrder(){
         <input id="f-comment" placeholder="Комментарий (домофон, этаж, пожелания)" value="${state.comment}"></div>
     </div>
 
-    <div class="sec"><h4>Итог</h4>
+    ${summaryBlock()}
+  `;
+}
+
+/* Блок «Итог» вынесен отдельно: при вводе комментария обновляем только его,
+   чтобы не сбрасывать фокус и текст в полях. */
+function summaryBlock(){
+  const notes = [];
+  if (negotiable()) notes.push("Позиции «от» — цена по запросу, менеджер подтвердит после заявки.");
+  if (deliveryNote()) notes.push(deliveryNote());
+  return `<div class="sec" id="sumsec"><h4>Итог</h4>
       <div class="total"><span>Сумма за лёд</span><b>${fmtInt(total())} ₽</b></div>
-      ${discountAmount() > 0 ? `<div class="total"><span style="color:#4ade80">Скидка 15% (бар, кафе, ресторан)</span><b style="color:#4ade80">−${fmtInt(discountAmount())} ₽</b></div>` : ""}
+      ${discountAmount() > 0 ? `<div class="total"><span style="color:#4ade80">Скидка ${Math.round(discountRate()*100)}% (${discountLabel()})</span><b style="color:#4ade80">−${fmtInt(discountAmount())} ₽</b></div>` : ""}
       <div class="total"><span>Стоимость доставки</span><b>${deliveryCost() ? fmtInt(deliveryCost()) + " ₽" : "бесплатно"}</b></div>
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
         <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(discountedTotal() + deliveryCost())} ₽</b></div>
-      ${isHoReCa() ? '<div class="note">Скидка 15% применена заведению ' + esc(state.venue) + '. Доставка считается отдельно.</div>' : ""}
+      ${venueRate() > 0 ? '<div class="note">Скидка 10% применена заведению ' + esc(state.venue) + '. Доставка считается отдельно.</div>' : ""}
+      ${hasPromoCode() ? '<div class="note">Промокод «барменымосквы» — скидка 18%. Доставка считается отдельно.</div>' : ""}
+      ${isHoReCa() && hasPromoCode() ? '<div class="note">Скидки не суммируются — применена максимальная (18%).</div>' : ""}
       ${craftUnits() > 0 ? '<div class="note">Крафтовый лёд — ручная работа: ' + smart(craftUnits()) + ' шт, изготовление ' + craftLeadDays() + ' дн. Ближайшая доставка — ' + fmtRu(minCraftDate()) + '.</div>' : ""}
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
       <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Оформить заказ</button>
@@ -1246,8 +1269,18 @@ document.addEventListener("input", e => {
     state.phone = masked;
     if (masked !== val) e.target.value = masked;
   }
-  else if (id === "f-comment") state.comment = val;
+  else if (id === "f-comment"){ state.comment = val; refreshSummary(); }
 });
+
+/* перерисовываем только блок «Итог» — поля и фокус не трогаем */
+function refreshSummary(){
+  const node = document.getElementById("sumsec");
+  if (!node) return;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = summaryBlock();
+  const fresh = tmp.querySelector("#sumsec");
+  if (fresh) node.replaceWith(fresh);
+}
 
 /* живое обновление итога, когда меняются данные доставки */
 document.addEventListener("change", e => {
