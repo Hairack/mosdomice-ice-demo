@@ -195,6 +195,15 @@ body{
 .clear{width:100%;background:none;border:none;color:var(--fg-60);font-size:10px;padding-top:9px;cursor:pointer;font-family:inherit}
 .empty{padding:70px 20px;text-align:center}
 .empty .cube{font-size:52px;color:var(--empty-pin)}
+.row2tools{display:flex;align-items:center;gap:16px;padding-top:3px}
+.tab img{width:19px;height:19px;display:block;margin:0 auto 3px;object-fit:contain;filter:none}
+.tab i{display:block;font-size:16px;font-style:normal;margin-bottom:2px}
+.hist{display:flex;align-items:center;gap:9px;background:var(--fill);border-radius:12px;padding:10px 11px;margin-bottom:6px;cursor:pointer}
+.hist .hrow{flex:1;min-width:0}
+.hist b{display:block;font-size:11.5px;font-weight:600;color:var(--fg)}
+.hist span{display:block;font-size:9.5px;color:var(--fg-55);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist .hsum{font-size:11.5px;font-weight:700;color:var(--ice);white-space:nowrap}
+.empty-logo{width:104px;height:104px;opacity:.95;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
 .empty h3{font-size:16px;font-weight:600;margin-top:12px}
 .empty p{color:var(--fg-72);font-size:11px;line-height:1.5;margin-top:8px}
 
@@ -351,7 +360,7 @@ input[type=date]{color-scheme:var(--scheme)}
       <div id="view"></div>
       </div>
       <div class="tabs">
-        <button class="tab on" data-tab="0"><i>&#9671;</i>Калькулятор</button>
+        <button class="tab on" data-tab="0"><img src="__CALC__" alt="">Калькулятор</button>
         <button class="tab" data-tab="1"><i>&#9776;</i>Заказ<span class="badge" id="badge">0</span></button>
         <button class="tab" data-tab="2"><i>&#9673;</i>Контакты</button>
       </div>
@@ -364,7 +373,7 @@ input[type=date]{color-scheme:var(--scheme)}
   <div class="verline" id="version">версия от <b id="ver">__VERSION__</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
-  Кнопка «Просто заказать» отправляет заказ менеджеру без перехода в мессенджеры.
+  Кнопка «Оформить заказ» отправляет заказ менеджеру без перехода в мессенджеры. После отправки форма очищается, а заказ остаётся в истории.
 </div>
 
 <script>
@@ -422,6 +431,7 @@ const state = {
   venueStatus: "",      // "" | searching | results | none | fail
   craftNotice: false,   // предупреждение о ручной работе
   craftNoticeShown: false,
+  history: [],
 };
 
 /* --- расчёты --- */
@@ -816,9 +826,10 @@ function viewOrder(){
   if (craftUnits() > 0 && !state.craftNoticeShown){ state.craftNotice = true; }
   if (craftUnits() === 0){ state.craftNotice = false; state.craftNoticeShown = false; }
   if (!lines().length){
-    return `<div class="empty"><div class="cube">◇</div>
+    return `<div class="empty"><img class="empty-logo" src="__LOGO__" alt="">
       <h3>Заказ пока пуст</h3>
-      <p>Откройте «Калькулятор», укажите нужные фракции и вес — здесь появится готовый заказ.</p></div>`;
+      <p>Откройте «Калькулятор», укажите нужные фракции и вес — здесь появится готовый заказ.</p>
+      <button class="link" data-history style="margin-top:14px">История заказов</button></div>`;
   }
   const rows = lines().map(l => `
     <div class="row">
@@ -842,7 +853,8 @@ function viewOrder(){
     </div>` : ""}
 
     <div class="sec"><h4>Состав заказа</h4>${rows}
-      <button class="clear" data-clear>Очистить заказ</button></div>
+      <div class="row2tools"><button class="clear" data-clear>Очистить заказ</button>
+        <button class="link" data-history>История заказов</button></div></div>
 
     <div class="sec"><h4>Доставка</h4>
       <div class="field"><span class="ico">▦</span><input type="date" id="f-date" min="${minCraftDate() || new Date().toISOString().slice(0,10)}" value="${state.date}"></div>
@@ -873,7 +885,7 @@ function viewOrder(){
       ${isHoReCa() ? '<div class="note">Скидка 15% применена заведению ' + esc(state.venue) + '. Доставка считается отдельно.</div>' : ""}
       ${craftUnits() > 0 ? '<div class="note">Крафтовый лёд — ручная работа: ' + smart(craftUnits()) + ' шт, изготовление ' + craftLeadDays() + ' дн. Ближайшая доставка — ' + fmtRu(minCraftDate()) + '.</div>' : ""}
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
-      <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Просто заказать</button>
+      <button class="btn${scheduleOk() ? "" : " off"}" id="send"${scheduleOk() ? "" : " disabled"}>Оформить заказ</button>
       <button class="link" id="preview">Посмотреть текст заказа</button>
     </div>`;
 }
@@ -920,6 +932,64 @@ function viewContacts(){
     </div>`;
 }
 
+
+/* История заказов: последние сверху, можно посмотреть и очистить целиком. */
+function saveHistory(text){
+  state.history.unshift({when: new Date().toISOString(), text: text});
+  if (state.history.length > 100) state.history = state.history.slice(0, 100);
+  try { localStorage.setItem("mosdomice_history", JSON.stringify(state.history)); } catch(_){}
+}
+function loadHistory(){
+  try { state.history = JSON.parse(localStorage.getItem("mosdomice_history") || "[]"); } catch(_){ state.history = []; }
+}
+function clearForm(){
+  state.qty = {}; state.address = ""; state.phone = ""; state.comment = "";
+  state.km = 0; state.coords = null; state.kmStatus = ""; state.venue = null; state.venues = [];
+  state.venueListOpen = true; state.venueStatus = ""; state.craftNotice = false; state.craftNoticeShown = false;
+}
+function histWhen(iso){
+  const d = new Date(iso);
+  const p = n => String(n).padStart(2, "0");
+  const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  return d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear() + ", " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+function histSum(text){
+  const m = text.match(/Итого к оплате:\s*([\d\s\u00a0]+)/);
+  return m ? m[1].replace(/\s/g,"") + " ₽" : "—";
+}
+function histAddr(text){
+  const m = text.match(/Адрес:\s*(.+)/);
+  return m ? m[1].trim() : "адрес не указан";
+}
+function viewHistory(){
+  document.getElementById("title").textContent = "История заказов";
+  const v = document.getElementById("view");
+  if (!state.history.length){
+    v.innerHTML = `<div class="empty"><div class="cube">&#128337;</div>
+      <h3>История пока пуста</h3>
+      <p>Здесь появятся ваши заказы после отправки.</p>
+      <button class="link" id="histBack" style="margin-top:14px">← Вернуться к заказу</button></div>`;
+    document.getElementById("histBack").onclick = () => { state.tab = 1; render(); };
+    return;
+  }
+  v.innerHTML = state.history.map((h,i) => `
+    <div class="hist" data-hist="${i}">
+      <div class="hrow"><b>${histWhen(h.when)}</b><span>${esc(histAddr(h.text))}</span></div>
+      <div class="hsum">${histSum(h.text)}</div></div>`).join("")
+    + `<button class="clear" data-histclear style="margin-top:8px">Очистить историю</button>
+       <button class="link" id="histBack2" style="margin-top:10px">← Вернуться к заказу</button>`;
+  document.getElementById("histBack2").onclick = () => { state.tab = 1; render(); };
+}
+function showHistoryText(i){
+  const h = state.history[i]; if (!h) return;
+  document.getElementById("title").textContent = "Заказ";
+  const v = document.getElementById("view");
+  v.innerHTML = `<p style="color:var(--fg-55);font-size:10.5px;padding:6px 3px 11px">${histWhen(h.when)}</p>
+    <div class="mono">${esc(h.text)}</div>
+    <button class="link" id="histBack3" style="margin-top:12px">← К истории</button>`;
+  document.getElementById("histBack3").onclick = () => { viewHistory(); };
+}
+
 /* --- взаимодействие --- */
 document.addEventListener("click", e => {
   const t = e.target;
@@ -944,6 +1014,10 @@ document.addEventListener("click", e => {
   if (more){ state.expanded[more.dataset.more] = !state.expanded[more.dataset.more]; render(); return; }
 
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
+  if (t.closest("[data-history]")){ viewHistory(); return; }
+  if (t.closest("[data-histclear]")){ state.history = []; try { localStorage.removeItem("mosdomice_history"); } catch(_){} viewHistory(); return; }
+  const histRow = t.closest("[data-hist]");
+  if (histRow){ showHistoryText(Number(histRow.dataset.hist)); return; }
 
 
   if (t.closest("[data-craft-close]")){ state.craftNotice = false; state.craftNoticeShown = true; render(); return; }
@@ -991,7 +1065,10 @@ async function sendOrder(btn){
     });
     const data = await res.json().catch(() => ({}));
     if (data && data.ok) {
-      toast("Ваш заказ принят", "Наши менеджеры свяжутся с вами в ближайшее время.");
+      saveHistory(text);
+      clearForm();
+      render();
+      toast("Ваш заказ принят", "Наши менеджеры свяжутся с вами в ближайшее время. Заказ сохранён в истории.");
     } else if (data && data.error === "rate_limited") {
       toast("Слишком много заявок", "Попробуйте отправить заказ через несколько минут.");
     } else {
@@ -1000,7 +1077,7 @@ async function sendOrder(btn){
   } catch(_) {
     copyText(); toast("Нет связи", "Текст заявки скопирован — отправьте его менеджеру.");
   } finally {
-    if (btn){ btn.disabled = false; btn.textContent = "Просто заказать"; }
+    if (btn){ btn.disabled = false; btn.textContent = "Оформить заказ"; }
   }
 }
 
@@ -1179,6 +1256,7 @@ document.addEventListener("change", e => {
   if (["f-date","f-from","f-to"].includes(e.target.id)) render();
 });
 
+loadHistory();
 render();
 
 /* тема оформления: A — «Северный лёд», B — «Ледяная витрина» */

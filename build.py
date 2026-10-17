@@ -23,8 +23,10 @@ def main():
     images = "{" + ",".join('"%s":"%s"' % (n, data_uri(n)) for n in PHOTOS) + "}"
     stamp = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
     logo = data_uri("logomark", "png")
+    calc = data_uri("calc", "png")
     html = (html.replace("__IMG__", images)
                 .replace("__LOGO__", logo)
+                .replace("__CALC__", calc)
                 .replace("__LOGO_HEADER__", logo)
                 .replace("__THEME_NAME__", "a")
                 .replace("__VERSION__", stamp))
