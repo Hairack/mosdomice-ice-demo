@@ -371,7 +371,7 @@ input[type=date]{color-scheme:var(--scheme)}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">17.10.2026 14:29</b></div>
+  <div class="verline" id="version">версия от <b id="ver">17.10.2026 14:37</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Оформить заказ» отправляет заказ менеджеру без перехода в мессенджеры. После отправки форма очищается, а заказ остаётся в истории.
@@ -425,7 +425,6 @@ const state = {
   date: new Date().toISOString().slice(0,10),
   from: "10:00", to: "17:00",
   address: "", phone: "", comment: "", km: 0, coords: null, kmStatus: "",
-  promoUnlocked: false,  // промокод введён ранее — скидка действует всегда
   expanded: {},
   venue: null,          // выбранное заведение с карты
   venues: [],           // найденные рядом заведения
@@ -501,15 +500,8 @@ const PROMO_RATE = 0.18;
 function isHoReCa(){ return !!state.venue; }
 function normText(v){ return (v || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ""); }
 function commentNorm(){ return normText(state.comment); }
-/* промокод запоминаем: повторно вводить не нужно */
-function commentHasPromoCode(){ return commentNorm().includes(PROMO_KEYWORD); }
-function hasPromoCode(){ return !!state.promoUnlocked || commentHasPromoCode(); }
-function unlockPromo(){
-  if (state.promoUnlocked) return;
-  state.promoUnlocked = true;
-  try { localStorage.setItem("mosdomice_promo", "1"); } catch(_){}
-}
-function loadPromo(){ try { state.promoUnlocked = localStorage.getItem("mosdomice_promo") === "1"; } catch(_){ state.promoUnlocked = false; } }
+/* промокод действует только в текущем заказе: каждый раз вводим заново */
+function hasPromoCode(){ return commentNorm().includes(PROMO_KEYWORD); }
 function venueRate(){ return isHoReCa() ? HORECA_RATE : 0; }
 function promoRate(){ return hasPromoCode() ? PROMO_RATE : 0; }
 /* скидки не суммируются: берём максимальную */
@@ -726,7 +718,7 @@ function orderText(){
   out.push("Стоимость доставки: " + fmtInt(deliveryCost()) + " ₽");
   out.push("Итого к оплате: " + fmtInt(discountedTotal() + deliveryCost()) + " ₽");
   if (venueRate() > 0) out.push("Заведение по карте: " + state.venue + " — скидка 10% применена");
-if (hasPromoCode()) out.push("Промокод «барменымосквы» — скидка 18% применена (сохранён для следующих заказов)");
+if (hasPromoCode()) out.push("Промокод «барменымосквы» — скидка 18% применена");
 if (isHoReCa() && hasPromoCode()) out.push("Скидки не суммируются: применена максимальная (18%).");
   if (negotiable()) out.push("Позиции «от» — цена по запросу, менеджер подтвердит.");
   if (deliveryNote()) out.push(deliveryNote());
@@ -915,7 +907,7 @@ function summaryBlock(){
       <div class="total" style="border-top:1px solid rgba(255,255,255,.14);padding-top:9px">
         <span style="font-weight:600">Итого к оплате</span><b style="color:var(--ice)">${fmtInt(discountedTotal() + deliveryCost())} ₽</b></div>
       ${venueRate() > 0 ? '<div class="note">Скидка 10% применена заведению ' + esc(state.venue) + '. Доставка считается отдельно.</div>' : ""}
-      ${hasPromoCode() ? '<div class="note">Промокод «барменымосквы» ' + (commentHasPromoCode() ? '— скидка 18%. Сохраним его для следующих заказов.' : 'сохранён — скидка 18% действует автоматически. Доставка считается отдельно.') + '</div>' : ""}
+      ${hasPromoCode() ? '<div class="note">Промокод «барменымосквы» — скидка 18%. Доставка считается отдельно.</div>' : ""}
       ${isHoReCa() && hasPromoCode() ? '<div class="note">Скидки не суммируются — применена максимальная (18%).</div>' : ""}
       ${craftUnits() > 0 ? '<div class="note">Крафтовый лёд — ручная работа: ' + smart(craftUnits()) + ' шт, изготовление ' + craftLeadDays() + ' дн. Ближайшая доставка — ' + fmtRu(minCraftDate()) + '.</div>' : ""}
       ${notes.map(n => '<div class="note">' + n + '</div>').join("")}
@@ -980,7 +972,6 @@ function clearForm(){
   state.qty = {}; state.address = ""; state.phone = ""; state.comment = "";
   state.km = 0; state.coords = null; state.kmStatus = ""; state.venue = null; state.venues = [];
   state.venueListOpen = true; state.venueStatus = ""; state.craftNotice = false; state.craftNoticeShown = false;
-  /* state.promoUnlocked не сбрасываем: промокод действует до очистки данных сайта */
 }
 function histWhen(iso){
   const d = new Date(iso);
@@ -1280,7 +1271,7 @@ document.addEventListener("input", e => {
     state.phone = masked;
     if (masked !== val) e.target.value = masked;
   }
-  else if (id === "f-comment"){ state.comment = val; if (normText(val).includes(PROMO_KEYWORD)) unlockPromo(); refreshSummary(); }
+  else if (id === "f-comment"){ state.comment = val; refreshSummary(); }
 });
 
 /* перерисовываем только блок «Итог» — поля и фокус не трогаем */
@@ -1302,7 +1293,6 @@ document.addEventListener("change", e => {
 });
 
 loadHistory();
-loadPromo();
 render();
 
 /* тема оформления: A — «Северный лёд», B — «Ледяная витрина» */
