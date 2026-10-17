@@ -17,13 +17,21 @@ def data_uri(name, ext="jpg"):
         return "data:" + mime + ";base64," + base64.b64encode(f.read()).decode()
 
 
+def calc_uri():
+    """Иконка калькулятора: лежит в наборе calc.imageset под именем calc@3x.png."""
+    path = os.path.join(ASSETS, "calc.imageset", "calc@3x.png")
+    import base64
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+
 def main():
     with open(os.path.join(HERE, "template.html"), encoding="utf-8") as f:
         html = f.read()
     images = "{" + ",".join('"%s":"%s"' % (n, data_uri(n)) for n in PHOTOS) + "}"
     stamp = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
     logo = data_uri("logomark", "png")
-    calc = data_uri("calc", "png")
+    calc = calc_uri()
     html = (html.replace("__IMG__", images)
                 .replace("__LOGO__", logo)
                 .replace("__CALC__", calc)
