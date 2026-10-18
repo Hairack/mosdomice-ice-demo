@@ -474,6 +474,8 @@ function outsideKm(lat, lon){
   return Math.max(1, Math.ceil(best));
 }
 const FREE_TOTAL = 5000, MKAD_PRICE = 1000, KM_PRICE = 100;
+/* ночная доставка: тариф ×2, если заказ ОФОРМЛЯЮТ с 00:00 до 07:00 */
+function isNightTariff(){ const h = new Date().getHours(); return h >= 0 && h < 7; }
 /* --- крафтовый лёд: ручная работа, изготавливается под заказ --- */
 const CRAFT_IDS = ["cube5", "stick", "glass-craft", "glass-darts"];
 function craftUnits(){ return lines().filter(l => CRAFT_IDS.includes(l.p.id)).reduce((s,l) => s + l.q, 0); }
@@ -603,12 +605,13 @@ function deliveryCost(){
   if (!lines().length) return 0;
   let cost = total() < FREE_TOTAL ? MKAD_PRICE : 0;
   cost += state.km * KM_PRICE;
-  return cost;
+  return cost * (isNightTariff() ? 2 : 1);
 }
 function deliveryNote(){
   if (!lines().length) return "";
   const parts = [total() < FREE_TOTAL ? "заказ до 5 000 ₽ — доставка по МКАД 1 000 ₽" : "доставка по МКАД бесплатно"];
   if (state.km > 0) parts.push("за МКАД +100 ₽/км (примерно " + smart(state.km) + " км)");
+  if (isNightTariff()) parts.push("ночная доставка (оформление 00:00–07:00) — тариф ×2");
   return "Доставка: " + parts.join(", ");
 }
 function fmtDate(){
@@ -716,6 +719,7 @@ function orderText(){
   out.push("Сумма за лёд: " + fmtInt(total()) + " ₽");
   if (discountAmount() > 0) out.push("Скидка " + Math.round(discountRate()*100) + "% (" + discountLabel() + "): −" + fmtInt(discountAmount()) + " ₽");
   out.push("Стоимость доставки: " + fmtInt(deliveryCost()) + " ₽");
+  if (isNightTariff()) out.push("Ночной тариф доставки ×2 (оформление 00:00–07:00).");
   out.push("Итого к оплате: " + fmtInt(discountedTotal() + deliveryCost()) + " ₽");
   if (venueRate() > 0) out.push("Заведение по карте: " + state.venue + " — скидка 10% применена");
 if (hasPromoCode()) out.push("Промокод «барменымосквы» — скидка 18% применена");
@@ -925,6 +929,7 @@ function viewContacts(){
         <div class="lbl">Яндекс Карты · Угрешская, 2, стр. 15</div>
       </div>
       <a class="route" href="yandexnavi://build_route_on_map?lat_to=55.711832&lon_to=37.686781">Открыть в навигаторе<span class="chev">›</span></a>
+      <a class="route" href="https://yandex.ru/maps/?rtext=~55.711832,37.686781&rtt=auto&routes%5Bavoid%5D=tolls%2Cunpaved" target="_blank">Маршрут в Яндекс Картах — без платных и грунтовых дорог<span class="chev">›</span></a>
     </div>
 
     <div class="sec"><h4>Адрес склада</h4>
