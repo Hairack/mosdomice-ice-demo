@@ -28,6 +28,44 @@ def calc_uri():
         return "data:image/png;base64," + base64.b64encode(f.read()).decode()
 
 
+# Каналы отправки заявок. Заявка уходит по первому доступному: если площадка
+# недоступна из России, приложение автоматически переходит к следующему.
+ORDER_CHANNELS = [
+    # Канал 1: приёмник на Google (доступен в России без VPN), шлёт заявку в Telegram.
+    {"url": "https://script.google.com/macros/s/AKfycbyLZTm0jd3Z_LZ_VihIOyk32-YTaP48zUIabGazaAkg_djwZeLhM15VOz1XRQ_onsCzGg/exec",
+     "secret": "mosdomice-ice-2026-relay-key"},
+    # Канал 2: второй приёмник на Google — другая учётная запись и площадка.
+    {"url": "https://script.google.com/macros/s/AKfycbyplUBROVn-A4g3avZRQd1ajmvANryuyiHWugrQOptUp11lXHEk86H1Fh90mJWbXy_S/exec",
+     "secret": "mosdomice-ice-2026-relay-key"},
+    # Канал 3: резервный приёмник на Cloudflare (доступен из России в сетях без фильтрации).
+    {"url": "https://ice-relay.mosdombar.workers.dev/",
+     "secret": "mosdomice-ice-2026-relay-key"},
+    # Канал 4: прежний приёмник на нашем сервере (когда поднимется).
+    {"url": "https://ledok.store/web-order.php", "secret": "1589c6b2986a630458c97bf44e3344a2f9367e0ba4a2b443"},
+]
+
+PHOTOS = ["lump", "frappe", "flake", "cups", "cube5", "stick", "glass-craft", "glass-darts", "dry"]
+
+# Файл приложения для Android лежит рядом с сайтом.
+APK_NAME = "ice-order-android.apk"
+
+
+def data_uri(name, ext="jpg"):
+    mime = "image/png" if ext == "png" else "image/jpeg"
+    path = os.path.join(ASSETS, name + ".imageset", name + "." + ext)
+    with open(path, "rb") as f:
+        return "data:" + mime + ";base64," + base64.b64encode(f.read()).decode()
+
+
+def calc_uri():
+    """Иконка калькулятора: лежит в наборе calc.imageset под именем calc@3x.png."""
+    path = os.path.join(ASSETS, "calc.imageset", "calc@3x.png")
+    import base64
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+
+
 WORK = os.path.join(ROOT, "work")
 
 
@@ -63,6 +101,7 @@ def main():
                 .replace("__CALC__", calc)
                 .replace("__LOGO_HEADER__", logo)
                 .replace("__APK__", APK_NAME)
+                .replace("__ORDER_ENDPOINTS__", json.dumps(ORDER_CHANNELS, ensure_ascii=False))
                 .replace("__THEME_NAME__", "a")
                 .replace("__VERSION__", stamp))
     with open(os.path.join(HERE, "index.html"), "w", encoding="utf-8", newline="\n") as f:

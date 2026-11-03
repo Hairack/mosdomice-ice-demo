@@ -272,6 +272,14 @@ input[type=date]{color-scheme:var(--scheme)}
 .vbox .vchange:hover{text-decoration:underline}
 .vbox .vrow.picked{margin-bottom:0;cursor:default}
 
+/* подсказки адреса */
+.abox{background:var(--fill);border-radius:14px;padding:10px;margin-bottom:9px;max-height:250px;overflow:auto}
+.abox .ahead{font-size:10px;font-weight:700;color:var(--fg-72);margin-bottom:7px}
+.arow{display:block;width:100%;text-align:left;font-family:inherit;background:var(--fill-2);
+  border:1px solid transparent;border-radius:10px;padding:8px 9px;margin-bottom:5px;cursor:pointer}
+.arow:hover{border-color:var(--accent)}
+.arow .atxt{font-size:10.5px;color:var(--fg);line-height:1.4}
+
 /* переключатель темы в «Контактах» */
 /* контакты */
 .ok{display:flex;align-items:center;gap:7px;margin-bottom:11px}
@@ -536,6 +544,9 @@ const state = {
   venues: [],           // найденные рядом заведения
   venueListOpen: true,  // список заведений развёрнут
   venueStatus: "",      // "" | searching | results | none | fail
+  addrOptions: [],      // подсказки адреса из карты
+  addrOpen: false,      // список подсказок раскрыт
+  addrPicked: false,    // адрес выбран из подсказок (или определён по GPS)
   craftNotice: false,   // предупреждение о ручной работе
   craftNoticeShown: false,
   ckQuery: "",
@@ -850,15 +861,15 @@ function toast(title, text){
 }
 
 /* --- отрисовка --- */
-function render(){
+function render(keepScroll){
   const v = document.getElementById("view");
+  const sc = document.getElementById("scroll");
+  /* при изменении количества позиции страница не должна «прыгать» в начало */
+  const keepTop = keepScroll && sc ? sc.scrollTop : 0;
   const titles = ["Калькулятор льда", "Заказ", "Контакты", "Коктейли"];
   document.getElementById("title").textContent = titles[state.tab];
 
-  const cnt = lines().length;
-  const badge = document.getElementById("badge");
-  badge.textContent = cnt;
-  badge.classList.toggle("on", cnt > 0);
+  refreshBadge();
 
   document.querySelectorAll(".tab").forEach(t =>
     t.classList.toggle("on", Number(t.dataset.tab) === state.tab));
@@ -868,30 +879,36 @@ function render(){
   else if (state.tab === 2) v.innerHTML = viewContacts();
   else if (state.ckDetail) v.innerHTML = viewCocktailDetail(state.ckDetail);
   else v.innerHTML = viewCocktails();
-  const sc = document.getElementById("scroll");
-  if (sc) sc.scrollTop = 0;
+  if (sc) sc.scrollTop = keepTop;
 }
 
-function viewCatalog(){
-  const parts = [];
-  parts.push(`<div class="lead"><h3>Соберите заказ по фракциям</h3>
-    <p>Отметьте, сколько льда нужно. Итог появится в разделе «Заказ» — оттуда заказ уходит менеджеру.</p>`);
-  if (lines().length){
-    const units = lines().reduce((s,l) => s + l.q, 0);
-    parts.push(`<div class="done on">✓ Выбрано ${lines().length} поз. · ${smart(units)} ед.</div>`);
-  }
-  parts.push(`</div>`);
+/* счётчик выбранных позиций на кнопке «Заказ» */
+function refreshBadge(){
+  const cnt = lines().length;
+  const badge = document.getElementById("badge");
+  if (!badge) return;
+  badge.textContent = cnt;
+  badge.classList.toggle("on", cnt > 0);
+}
 
-  PRODUCTS.forEach(p => {
-    const q = state.qty[p.id] || 0;
-    const unitWord = p.unit;
-    const priceTag = (p.from ? "от " : "") + fmtInt(p.price) + " ₽/" + unitWord;
-    const sum = q === 0 ? "" : (p.from ? '<div class="sum">по запросу</div>'
-                                       : '<div class="sum">' + fmtInt(q * p.price) + " ₽</div>");
-    const del = q ? '<button class="trash" data-del="' + p.id + '" title="Убрать">🗑</button>' : "";
-    const open = state.expanded[p.id];
-    parts.push(`
-      <div class="card${q ? " chosen" : ""}">
+function catalogStatsText(){
+  if (!lines().length) return "";
+  const units = lines().reduce((s,l) => s + l.q, 0);
+  return "✓ Выбрано " + lines().length + " поз. · " + smart(units) + " ед.";
+}
+
+/* одна карточка фракции: вынесена отдельно, чтобы обновлять её без перерисовки
+   всей страницы — так список не «прыгает» в начало при нажатии «+»/«−» */
+function catalogCard(p){
+  const q = state.qty[p.id] || 0;
+  const unitWord = p.unit;
+  const priceTag = (p.from ? "от " : "") + fmtInt(p.price) + " ₽/" + unitWord;
+  const sum = q === 0 ? "" : (p.from ? '<div class="sum">по запросу</div>'
+                                     : '<div class="sum">' + fmtInt(q * p.price) + " ₽</div>");
+  const del = q ? '<button class="trash" data-del="' + p.id + '" title="Убрать">🗑</button>' : "";
+  const open = state.expanded[p.id];
+  return `
+      <div class="card${q ? " chosen" : ""}" data-card="${p.id}">
         <div class="photo" style="background-image:url('${IMG[p.img]}')">
           <div class="pricetag">${priceTag}</div>
         </div>
@@ -909,14 +926,45 @@ function viewCatalog(){
             ${sum}${del}
           </div>
         </div>
-      </div>`);
-  });
+      </div>`;
+}
+
+function viewCatalog(){
+  const parts = [];
+  parts.push(`<div class="lead"><h3>Соберите заказ по фракциям</h3>
+    <p>Отметьте, сколько льда нужно. Итог появится в разделе «Заказ» — оттуда заказ уходит менеджеру.</p>
+    <div class="done on" id="catstat"${lines().length ? "" : " hidden"}>${catalogStatsText()}</div></div>`);
+  PRODUCTS.forEach(p => parts.push(catalogCard(p)));
   return parts.join("");
 }
 
+/* точечно обновляем одну карточку — скролл и остальные карточки не трогаем */
+function refreshCatalogCard(id){
+  const p = PRODUCTS.find(x => x.id === id);
+  const node = document.querySelector('[data-card="' + id + '"]');
+  if (!p || !node) return false;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = catalogCard(p);
+  node.replaceWith(tmp.firstElementChild);
+  const st = document.getElementById("catstat");
+  if (st){ st.textContent = catalogStatsText(); st.hidden = !lines().length; }
+  refreshBadge();
+  return true;
+}
+
 /* подсказка о положении адреса относительно МКАД */
+/* варианты адреса из карты: выбираем точный адрес, к нему ищем заведения */
+function addrHint(){
+  if (!state.addrOpen || !state.addrOptions.length) return "";
+  const rows = state.addrOptions.map((o, i) =>
+    '<button class="arow" data-addr="' + i + '"><span class="atxt">' + esc(o.label) + '</span></button>').join("");
+  return '<div class="abox"><div class="ahead">Выберите адрес из списка</div>' + rows + '</div>';
+}
+
 /* список заведений рядом с адресом: скидка — только после выбора */
 function venueHint(){
+  /* заведения ищем только у адреса, который выбран или определён по GPS */
+  if (!state.coords) return "";
   if (state.venueStatus === "searching")
     return '<div class="note">Ищем заведения по этому адресу…</div>';
   if (state.venueStatus === "none")
@@ -995,8 +1043,9 @@ function viewOrder(){
       </div>
       ${scheduleHint() ? '<div class="note">' + scheduleHint() + '</div>' : ""}
       <div class="field"><span class="ico">◉</span>
-        <input id="f-address" placeholder="Адрес доставки" value="${state.address}">
+        <input id="f-address" placeholder="Адрес доставки" autocomplete="off" value="${state.address}">
         <button class="mini-btn" id="geo">Я здесь</button></div>
+      ${addrHint()}
       ${kmHint()}
       ${venueHint()}
       <div class="field"><span class="ico">✆</span>
@@ -1088,6 +1137,7 @@ function clearForm(){
   state.qty = {}; state.address = ""; state.phone = ""; state.comment = "";
   state.km = 0; state.coords = null; state.kmStatus = ""; state.venue = null; state.venues = [];
   state.venueListOpen = true; state.venueStatus = ""; state.craftNotice = false; state.craftNoticeShown = false;
+  state.addrOptions = []; state.addrOpen = false; state.addrPicked = false;
 }
 function histWhen(iso){
   const d = new Date(iso);
@@ -1233,14 +1283,20 @@ document.addEventListener("click", e => {
     const cur = state.qty[p.id] || 0;
     let next = cur + dir * p.step;
     if (next <= 0){ delete state.qty[p.id]; } else { state.qty[p.id] = next; }
-    render(); return;
+    /* в калькуляторе обновляем только эту карточку — список не срывается в начало */
+    if (state.tab === 0 && refreshCatalogCard(p.id)) return;
+    render(true); return;
   }
 
   const del = t.closest("[data-del]");
-  if (del){ delete state.qty[del.dataset.del]; render(); return; }
+  if (del){
+    delete state.qty[del.dataset.del];
+    if (state.tab === 0 && refreshCatalogCard(del.dataset.del)) return;
+    render(true); return;
+  }
 
   const more = t.closest("[data-more]");
-  if (more){ state.expanded[more.dataset.more] = !state.expanded[more.dataset.more]; render(); return; }
+  if (more){ state.expanded[more.dataset.more] = !state.expanded[more.dataset.more]; render(true); return; }
 
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
   if (t.closest("[data-history]")){ viewHistory(); return; }
@@ -1266,6 +1322,12 @@ document.addEventListener("click", e => {
 
   if (t.closest("[data-privacy]")){ e.preventDefault(); showPrivacy(); return; }
 
+  const arow = t.closest("[data-addr]");
+  if (arow){
+    pickAddress(state.addrOptions[Number(arow.dataset.addr)]);
+    return;
+  }
+
   if (t.closest("#geo")){ locateMe(); return; }
   if (t.closest("#preview")){
     showText(); return;
@@ -1281,32 +1343,67 @@ document.addEventListener("click", e => {
 });
 
 
-/* Отправка заявки менеджеру через наш сервер. Из России так надёжнее, чем в Telegram. */
-const ORDER_URL = "https://ledok.store/web-order.php";
+/* Отправка заявки менеджеру. Каналов несколько и они на разных площадках:
+   если один недоступен, заявка автоматически уходит через следующий. */
+const ORDER_ENDPOINTS = __ORDER_ENDPOINTS__;
+
+/* один канал: вернёт "ok" (принят) или "retry" (можно пробовать дальше).
+   Сначала POST, если он не прошёл — тот же приёмник пробуем обычным GET. */
+function postOrderTo(ch, text){
+  return new Promise(resolve => {
+    let finished = false;
+    const finish = v => { if (!finished){ finished = true; resolve(v); } };
+    const timer = setTimeout(() => finish("retry"), 9000);
+    const payload = { text: text };
+    if (ch.secret) payload.secret = ch.secret;
+    let body = "";
+    try { body = JSON.stringify(payload); } catch(_) { finish("retry"); return; }
+
+    const afterPost = () => {
+      /* резервный вход обычным GET: работает там, где POST блокируют */
+      let getUrl = ch.url + (ch.url.indexOf("?") >= 0 ? "&" : "?") + "text=" + encodeURIComponent(text)
+        + (ch.secret ? "&secret=" + encodeURIComponent(ch.secret) : "");
+      if (getUrl.length > 7000){ clearTimeout(timer); finish("retry"); return; }
+      fetch(getUrl, { method: "GET" }).then(res => res.text()).then(raw => {
+        clearTimeout(timer);
+        let data = {};
+        try { data = JSON.parse(raw); } catch(_) {}
+        finish(data && data.ok ? "ok" : "retry");
+      }).catch(() => { clearTimeout(timer); finish("retry"); });
+    };
+
+    try {
+      fetch(ch.url, {
+        method: "POST",
+        /* text/plain не вызывает предварительный запрос браузера — так надёжнее */
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: body
+      }).then(res => res.text()).then(raw => {
+        let data = {};
+        try { data = JSON.parse(raw); } catch(_) {}
+        if (data && data.ok){ clearTimeout(timer); finish("ok"); return; }
+        afterPost();
+      }).catch(afterPost);
+    } catch(_) { afterPost(); }
+  });
+}
+
 async function sendOrder(btn){
   const text = orderText();
   if (btn){ btn.disabled = true; btn.textContent = "Отправляем…"; }
-  try {
-    const res = await fetch(ORDER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: text })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (data && data.ok) {
-      saveHistory(text);
-      clearForm();
-      render();
-      toast("Ваш заказ принят", "Наши менеджеры свяжутся с вами в ближайшее время. Заказ сохранён в истории.");
-    } else if (data && data.error === "rate_limited") {
-      toast("Слишком много заявок", "Попробуйте отправить заказ через несколько минут.");
-    } else {
-      copyText(); toast("Заказ не ушёл", "Текст заявки скопирован — отправьте его менеджеру.");
-    }
-  } catch(_) {
-    copyText(); toast("Нет связи", "Текст заявки скопирован — отправьте его менеджеру.");
-  } finally {
-    if (btn){ btn.disabled = false; btn.textContent = "Оформить заказ"; }
+  let sent = false;
+  for (const ch of ORDER_ENDPOINTS){
+    const r = await postOrderTo(ch, text);
+    if (r === "ok"){ sent = true; break; }
+  }
+  if (btn){ btn.disabled = false; btn.textContent = "Оформить заказ"; }
+  if (sent){
+    saveHistory(text);
+    clearForm();
+    render();
+    toast("Ваш заказ принят", "Наши менеджеры свяжутся с вами в ближайшее время. Заказ сохранён в истории.");
+  } else {
+    copyText(); toast("Нет связи", "Текст заявки скопирован — попробуйте отправить ещё раз через минуту.");
   }
 }
 
@@ -1415,26 +1512,61 @@ function locateMe(){
   }, { enableHighAccuracy: true, timeout: 12000 });
 }
 
-/* определение адреса по карте: OpenStreetMap Nominatim + геозона МКАД */
+/* варианты адреса по карте: показываем все совпадения, человек выбирает точный */
+async function suggestAddress(){
+  const q = state.address.trim();
+  if (q.length < 5){ state.addrOpen = false; state.addrOptions = []; render(true); return; }
+  try {
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=7&addressdetails=1"
+      + "&accept-language=ru&q=" + encodeURIComponent(q);
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    const list = await res.json();
+    state.addrOptions = (list || []).map(it => ({
+      label: it.display_name, lat: parseFloat(it.lat), lon: parseFloat(it.lon)
+    })).filter(o => !isNaN(o.lat) && !isNaN(o.lon));
+    state.addrOpen = state.addrOptions.length > 0;
+  } catch (_) {
+    state.addrOptions = []; state.addrOpen = false;
+  }
+  render(true);
+}
+
+/* человек выбрал точный адрес из списка: считаем доставку и ищем заведения */
+function pickAddress(opt){
+  if (!opt) return;
+  state.address = opt.label;
+  state.addrOptions = []; state.addrOpen = false; state.addrPicked = true;
+  const inp = document.getElementById("f-address");
+  if (inp) inp.value = opt.label;
+  state.coords = [opt.lat, opt.lon];
+  state.km = outsideKm(opt.lat, opt.lon);
+  state.kmStatus = "ok";
+  render(true);
+  checkVenue(opt.lat, opt.lon);
+}
+
+/* определение адреса по карте: берём лучший вариант (по Enter или из списка) */
 async function locateAddress(){
   const q = state.address.trim();
   if (q.length < 5){ toast("Укажите адрес", "Введите улицу, дом и город."); return; }
-  state.kmStatus = "search"; render();
+  if (state.addrOptions.length){ pickAddress(state.addrOptions[0]); return; }
+  state.kmStatus = "search"; render(true);
   try {
-    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(q);
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1"
+      + "&accept-language=ru&q=" + encodeURIComponent(q);
     const res = await fetch(url, { headers: { "Accept": "application/json" } });
     const list = await res.json();
-    if (!list.length){ state.kmStatus = "fail"; state.km = 0; render(); return; }
+    if (!list.length){ state.kmStatus = "fail"; state.km = 0; render(true); return; }
     const lat = parseFloat(list[0].lat), lon = parseFloat(list[0].lon);
     state.coords = [lat, lon];
     state.km = outsideKm(lat, lon);
     state.kmStatus = "ok";
-    render();
+    render(true);
     await checkVenue(lat, lon);
   } catch (_) {
-    state.kmStatus = "fail"; state.km = 0; render();
+    state.kmStatus = "fail"; state.km = 0; render(true);
   }
-  render();
+  render(true);
 }
 
 /* ищем заведения рядом с точкой: скидку включает только выбор из списка */
@@ -1454,6 +1586,15 @@ async function checkVenue(lat, lon){
   render();
 }
 
+/* Enter в поле адреса — берём лучший вариант из подсказок */
+document.addEventListener("keydown", e => {
+  if (e.target && e.target.id === "f-address" && e.key === "Enter"){
+    e.preventDefault();
+    clearTimeout(locateTimer);
+    locateAddress();
+  }
+});
+
 /* поля ввода сохраняются при перерисовке */
 document.addEventListener("input", e => {
   const id = e.target.id;
@@ -1463,11 +1604,12 @@ document.addEventListener("input", e => {
   else if (id === "f-to") state.to = val;
   else if (id === "f-address") {
     state.address = val;
-    // адрес изменился — прежняя скидка и список заведений больше не относятся к новому адресу
+    // адрес изменился — прежние скидка, заведения и рассчитанная доставка больше не подходят
     state.venue = null; state.venues = []; state.venueListOpen = true; state.venueStatus = "";
-    // адрес определяется сам: ждём паузу после ввода и считаем доставку
+    state.addrPicked = false; state.coords = null; state.km = 0; state.kmStatus = "";
+    // пока человек печатает — показываем варианты адреса, а не заведения
     clearTimeout(locateTimer);
-    locateTimer = setTimeout(() => { locateAddress(); }, 1200);
+    locateTimer = setTimeout(() => { suggestAddress(); }, 700);
   }
   else if (id === "f-phone") {
     const masked = maskPhone(val);
