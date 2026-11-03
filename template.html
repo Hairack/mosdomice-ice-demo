@@ -368,6 +368,47 @@ input[type=date]{color-scheme:var(--scheme)}
 .mrow{display:flex;gap:9px;font-size:12px;color:var(--fg-72);line-height:1.5;padding:3px 0}
 .cksrc{font-size:9.5px;color:var(--fg-30);padding:4px 0 8px}
 
+
+/* ===== Предложение скачать приложение (справа, как куки-уведомление) ===== */
+.apppop{
+  position:fixed;right:20px;bottom:20px;z-index:9000;width:330px;max-width:calc(100vw - 32px);
+  background:linear-gradient(160deg,#123a5c,#0b2136 60%,#081a2b);
+  border:1px solid rgba(166,226,248,.28);border-radius:18px;padding:14px 14px 12px;
+  box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+  font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;color:#eaf4ff;
+  opacity:0;transform:translateY(14px);pointer-events:none;transition:.32s ease;
+}
+.apppop.on{opacity:1;transform:translateY(0);pointer-events:auto}
+.apppop-x{
+  position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.5);
+  font-size:20px;line-height:1;cursor:pointer;font-family:inherit;padding:2px 4px;
+}
+.apppop-x:hover{color:#fff}
+.apppop-row{display:flex;gap:10px;align-items:center;padding-right:18px}
+.apppop-logo{width:40px;height:40px;border-radius:50%;background:#0d2438;border:1px solid rgba(166,226,248,.3);flex:none;object-fit:contain}
+.apppop-head b{display:block;font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.1px}
+.apppop-head span{display:block;font-size:11px;line-height:1.45;color:rgba(255,255,255,.62);margin-top:2px}
+.apppop-btns{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.apppop-btn{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;text-decoration:none;
+  border:none;border-radius:13px;padding:9px 12px;cursor:pointer;font-family:inherit;font-size:12px;
+  background:rgba(255,255,255,.09);color:#eaf4ff;transition:.18s;
+}
+.apppop-btn:hover{background:rgba(255,255,255,.15)}
+.apppop-btn.and{background:#a6e2f8;color:#07202f}
+.apppop-btn.and:hover{background:#8ccfee}
+.apppop-btn .ico{font-size:17px;line-height:1;flex:none}
+.apppop-btn b{display:block;font-size:12.5px;font-weight:700}
+.apppop-btn em{display:block;font-style:normal;font-size:9.5px;opacity:.72;margin-top:1px}
+.apppop-note{
+  margin-top:9px;font-size:11px;line-height:1.45;color:#cfe9ff;background:rgba(166,226,248,.12);
+  border:1px solid rgba(166,226,248,.24);border-radius:11px;padding:8px 10px;
+}
+.apppop-note b{color:#fff}
+@media (max-width:520px){
+  .apppop{right:12px;left:12px;bottom:12px;width:auto}
+}
+
 </style></head><body>
 
 <div class="head">
@@ -414,6 +455,29 @@ input[type=date]{color-scheme:var(--scheme)}
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Оформить заказ» отправляет заказ менеджеру без перехода в мессенджеры. После отправки форма очищается, а заказ остаётся в истории.
+</div>
+
+
+<div class="apppop" id="apppop" role="dialog" aria-labelledby="apppopTitle">
+  <button class="apppop-x" id="apppopClose" aria-label="Закрыть">&#215;</button>
+  <div class="apppop-row">
+    <img class="apppop-logo" src="__LOGO_HEADER__" alt="">
+    <div class="apppop-head">
+      <b id="apppopTitle">Приложение «Доставка льда»</b>
+      <span>Заказывайте лёд в один клик: калькулятор, доставка по адресу и история заказов.</span>
+    </div>
+  </div>
+  <div class="apppop-btns">
+    <a class="apppop-btn and" id="apppopAndroid" href="__APK__" download="Доставка-льда.apk">
+      <span class="ico">&#9660;</span>
+      <span><b>Скачать для Android</b><em>Установить приложение</em></span>
+    </a>
+    <button class="apppop-btn ios" id="apppopIOS" type="button">
+      <span class="ico">&#63743;</span>
+      <span><b>Приложение для iPhone</b><em>App Store</em></span>
+    </button>
+  </div>
+  <div class="apppop-note" id="apppopNote" hidden></div>
 </div>
 
 <script>
@@ -1459,5 +1523,42 @@ function setTheme(v){
   const v = VARIANT_NAMES[fromURL] ? fromURL : (VARIANT_NAMES[saved] ? saved : "a");
   setTheme(v);
 })();
+
+/* ===== Предложение скачать приложение: показываем один раз за заход ===== */
+(function () {
+  var pop = document.getElementById("apppop");
+  if (!pop) return;
+
+  var shown = false;
+  function show() {
+    if (shown) return;
+    shown = true;
+    pop.classList.add("on");
+  }
+  function hide() {
+    pop.classList.remove("on");
+  }
+
+  /* всплывает справа чуть после открытия страницы */
+  setTimeout(show, 900);
+  /* и при первом движении/клике, если посетитель сразу начал листать */
+  window.addEventListener("scroll", show, { once: true, passive: true });
+
+  document.getElementById("apppopClose").onclick = hide;
+
+  /* Android: начинаем загрузку приложения */
+  var note = document.getElementById("apppopNote");
+  document.getElementById("apppopAndroid").addEventListener("click", function () {
+    note.hidden = false;
+    note.innerHTML = "<b>Загрузка началась.</b> Откройте файл и разрешите установку, если телефон спросит.";
+  });
+
+  /* iPhone: приложение ещё готовится */
+  document.getElementById("apppopIOS").addEventListener("click", function () {
+    note.hidden = false;
+    note.innerHTML = "<b>Приложение для iPhone пока в разработке.</b> Оно появится в App Store — а пока заказ можно оформить на сайте.";
+  });
+})();
+
 </script>
 </body></html>

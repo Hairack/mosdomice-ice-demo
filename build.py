@@ -9,6 +9,9 @@ ROOT = os.path.dirname(HERE)                            # ...\MosDomIce\GPT
 ASSETS = os.path.join(ROOT, "ice-app", "Sources", "Resources", "Assets.xcassets")
 PHOTOS = ["lump", "frappe", "flake", "cups", "cube5", "stick", "glass-craft", "glass-darts", "dry"]
 
+# Файл приложения для Android лежит рядом с сайтом.
+APK_NAME = "ice-order-android.apk"
+
 
 def data_uri(name, ext="jpg"):
     mime = "image/png" if ext == "png" else "image/jpeg"
@@ -59,6 +62,7 @@ def main():
                 .replace("__LOGO_DARK__", logo_dark)
                 .replace("__CALC__", calc)
                 .replace("__LOGO_HEADER__", logo)
+                .replace("__APK__", APK_NAME)
                 .replace("__THEME_NAME__", "a")
                 .replace("__VERSION__", stamp))
     with open(os.path.join(HERE, "index.html"), "w", encoding="utf-8", newline="\n") as f:
