@@ -376,9 +376,9 @@ input[type=date]{color-scheme:var(--scheme)}
   border:1px solid rgba(166,226,248,.28);border-radius:18px;padding:14px 14px 12px;
   box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
   font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;color:#eaf4ff;
-  opacity:0;transform:translateY(14px);pointer-events:none;transition:.32s ease;
+  opacity:0;transform:translateX(40px);pointer-events:none;transition:opacity .32s ease,transform .34s cubic-bezier(.16,.84,.44,1);
 }
-.apppop.on{opacity:1;transform:translateY(0);pointer-events:auto}
+.apppop.on{opacity:1;transform:translateX(0);pointer-events:auto}
 .apppop-x{
   position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.5);
   font-size:20px;line-height:1;cursor:pointer;font-family:inherit;padding:2px 4px;
@@ -451,7 +451,7 @@ input[type=date]{color-scheme:var(--scheme)}
 </div>
 
 <div class="tip">
-  <div class="verline" id="version">версия от <b id="ver">03.11.2026 15:01</b></div>
+  <div class="verline" id="version">версия от <b id="ver">03.11.2026 15:07</b></div>
   <b>Как проверить заказ:</b> на экране «Калькулятор» задайте вес по фракциям, откройте «Заказ», впишите адрес — он определится по карте сам, доставка прибавится к итогу,
   заполните адрес и время — текст заказа сформируется сам, как в сообщении менеджеру.
   Кнопка «Оформить заказ» отправляет заказ менеджеру без перехода в мессенджеры. После отправки форма очищается, а заказ остаётся в истории.
