@@ -371,14 +371,14 @@ input[type=date]{color-scheme:var(--scheme)}
 
 /* ===== Предложение скачать приложение (справа, как куки-уведомление) ===== */
 .apppop{
-  position:fixed;right:20px;bottom:20px;z-index:9000;width:330px;max-width:calc(100vw - 32px);
+  position:fixed;right:20px;top:50%;z-index:1000001;width:330px;max-width:calc(100vw - 32px);
   background:linear-gradient(160deg,#123a5c,#0b2136 60%,#081a2b);
   border:1px solid rgba(166,226,248,.28);border-radius:18px;padding:14px 14px 12px;
   box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
   font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;color:#eaf4ff;
-  opacity:0;transform:translateX(40px);pointer-events:none;transition:opacity .32s ease,transform .34s cubic-bezier(.16,.84,.44,1);
+  opacity:0;transform:translate(40px,-50%);pointer-events:none;transition:opacity .32s ease,transform .34s cubic-bezier(.16,.84,.44,1);
 }
-.apppop.on{opacity:1;transform:translateX(0);pointer-events:auto}
+.apppop.on{opacity:1;transform:translate(0,-50%);pointer-events:auto}
 .apppop-x{
   position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.5);
   font-size:20px;line-height:1;cursor:pointer;font-family:inherit;padding:2px 4px;
@@ -406,7 +406,8 @@ input[type=date]{color-scheme:var(--scheme)}
 }
 .apppop-note b{color:#fff}
 @media (max-width:520px){
-  .apppop{right:12px;left:12px;bottom:12px;width:auto}
+  .apppop{right:12px;left:12px;top:auto;bottom:12px;width:auto;transform:translate(0,20px)}
+  .apppop.on{transform:translate(0,0)}
 }
 
 </style></head><body>
