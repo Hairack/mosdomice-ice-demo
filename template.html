@@ -330,6 +330,44 @@ input[type=date]{color-scheme:var(--scheme)}
 .tip{max-width:1180px;color:rgba(255,255,255,.5);font-size:11.5px;line-height:1.6;text-align:center}
 .tip b{color:rgba(255,255,255,.8)}
 .verline{color:#8cd4f2;font-size:11px;font-weight:700;letter-spacing:.4px;margin-bottom:8px}
+/* --- коктейли --- */
+.cksearch{display:flex;align-items:center;gap:8px;background:var(--fill);border-radius:12px;padding:9px 12px;margin:2px 0 4px}
+.cksearch input{flex:1;background:none;border:none;outline:none;color:var(--fg);font-family:inherit;font-size:12.5px}
+.cksearch input::placeholder{color:var(--fg-42)}
+.ckcat{font-size:9.5px;font-weight:800;letter-spacing:1.1px;color:var(--ice);text-transform:uppercase;margin:8px 0 2px}
+.ckcat em{font-style:normal;background:var(--hl-bg);color:var(--ice-soft);border-radius:9px;padding:1px 6px;margin-left:4px;font-size:9px}
+.ckrow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px;margin-bottom:7px;cursor:pointer}
+.ckrow:hover{border-color:var(--ice)}
+.ckrow img,.ckph{width:54px;height:54px;border-radius:11px;object-fit:cover;flex:0 0 auto;background:var(--fill)}
+.ckmeta{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.ckmeta b{font-size:12.5px;color:var(--fg-strong)}
+.ckmeta .en{font-size:9.5px;color:var(--fg-45)}
+.ckmeta .ing{font-size:9.5px;color:var(--fg-60);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ckrow .chev{color:var(--fg-30);font-size:14px}
+.ckback{background:none;border:none;color:var(--ice);font-family:inherit;font-size:12px;font-weight:600;padding:2px 0 8px;cursor:pointer}
+.ckhero{width:100%;height:190px;object-fit:cover;border-radius:16px;border:1px solid var(--line);margin-bottom:10px}
+.ckhead{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.ckhead b{font-size:17px;color:var(--fg-strong)}
+.ckhead .en{font-size:11.5px;color:var(--fg-45)}
+.ckchip{align-self:flex-start;margin-top:3px;font-size:9px;font-weight:700;background:var(--hl-bg);color:var(--ice-soft);border-radius:9px;padding:2px 8px}
+.ckblock{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:9px}
+.ckblock h4{font-size:9.5px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--ice);margin-bottom:8px}
+.ingrow{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--fg-78);padding:3px 0}
+.ingrow .am{color:var(--ice);font-weight:600;white-space:nowrap}
+.ckstep{display:flex;gap:9px;font-size:12px;color:var(--fg-72);padding:3px 0;line-height:1.45}
+.ckstep .ckn{flex:0 0 auto;width:18px;height:18px;border-radius:50%;background:var(--hl-bg);color:var(--ice-soft);font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.cktext{font-size:12px;color:var(--fg-72);line-height:1.5}
+.ckmyth{padding:0;overflow:hidden}
+.cktoggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:12px;cursor:pointer;font-family:inherit;text-align:left}
+.cktoggle .ic{font-size:15px}
+.cktoggle .tx{display:flex;flex-direction:column;flex:1}
+.cktoggle .tx b{font-size:12.5px;color:var(--fg-strong)}
+.cktoggle .tx em{font-style:normal;font-size:9.5px;color:var(--fg-45)}
+.cktoggle .ar{color:var(--fg-45)}
+.mythbody{padding:0 12px 12px}
+.mrow{display:flex;gap:9px;font-size:12px;color:var(--fg-72);line-height:1.5;padding:3px 0}
+.cksrc{font-size:9.5px;color:var(--fg-30);padding:4px 0 8px}
+
 </style></head><body>
 
 <div class="head">
@@ -364,6 +402,7 @@ input[type=date]{color-scheme:var(--scheme)}
         <button class="tab on" data-tab="0"><img src="__CALC__" alt="">Калькулятор</button>
         <button class="tab" data-tab="1"><i>&#9776;</i>Заказ<span class="badge" id="badge">0</span></button>
         <button class="tab" data-tab="2"><i>&#9673;</i>Контакты</button>
+        <button class="tab" data-tab="3"><i>&#127864;</i>Коктейли</button>
       </div>
       <div class="toast" id="toast"></div>
     </div></div>
@@ -379,6 +418,8 @@ input[type=date]{color-scheme:var(--scheme)}
 
 <script>
 const IMG = __IMG__;
+const CK_IMG = __CK_IMG__;
+const COCKTAILS = __COCKTAILS__;
 const PRODUCTS = [
   {id:"lump",  name:"Кусковой лёд",           order:"Кускового льда", unit:"кг", price:50,  from:false, img:"lump",
    sum:"Плотный прозрачный кубик весом около 18 г. Базовый лёд для бара, зала и витрины.",
@@ -432,6 +473,9 @@ const state = {
   venueStatus: "",      // "" | searching | results | none | fail
   craftNotice: false,   // предупреждение о ручной работе
   craftNoticeShown: false,
+  ckQuery: "",
+  ckDetail: null,
+  ckMyth: false,
   history: [],
 };
 
@@ -743,7 +787,7 @@ function toast(title, text){
 /* --- отрисовка --- */
 function render(){
   const v = document.getElementById("view");
-  const titles = ["Калькулятор льда", "Заказ", "Контакты"];
+  const titles = ["Калькулятор льда", "Заказ", "Контакты", "Коктейли"];
   document.getElementById("title").textContent = titles[state.tab];
 
   const cnt = lines().length;
@@ -756,7 +800,9 @@ function render(){
 
   if (state.tab === 0) v.innerHTML = viewCatalog();
   else if (state.tab === 1) v.innerHTML = viewOrder();
-  else v.innerHTML = viewContacts();
+  else if (state.tab === 2) v.innerHTML = viewContacts();
+  else if (state.ckDetail) v.innerHTML = viewCocktailDetail(state.ckDetail);
+  else v.innerHTML = viewCocktails();
   const sc = document.getElementById("scroll");
   if (sc) sc.scrollTop = 0;
 }
@@ -1021,12 +1067,99 @@ function showHistoryText(i){
   document.getElementById("histBack3").onclick = () => { viewHistory(); };
 }
 
+/* --- Коктейли IBA --- */
+function ckList(){
+  return (typeof COCKTAILS !== "undefined" && COCKTAILS) ? COCKTAILS : [];
+}
+function ckAll(){
+  return ckList().slice().sort((a, b) => {
+    const x = a.nameEn.toLowerCase(), y = b.nameEn.toLowerCase();
+    return x < y ? -1 : x > y ? 1 : 0;
+  });
+}
+function ckTitle(c){
+  return (c.name && c.name !== c.nameEn) ? `${c.nameEn} (${c.name})` : c.nameEn;
+}
+function ckFiltered(){
+  const q = (state.ckQuery || "").trim().toLowerCase();
+  const base = ckAll();
+  if (!q) return base;
+  return base.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.nameEn.toLowerCase().includes(q) ||
+    c.ingredients.map(i => i.name).join(" ").toLowerCase().includes(q));
+}
+function ckImg(slug){
+  const k = (typeof CK_IMG !== "undefined" && CK_IMG) ? CK_IMG[slug] : null;
+  return k || "";
+}
+function ckCatTitle(key){
+  return {"The unforgettables":"Незабываемая классика","Contemporary Classics":"Современная классика","New Era":"Коктейли новой эры"}[key] || key;
+}
+function ckRow(c){
+  const img = ckImg(c.slug);
+  const line = c.ingredients.map(i => (i.amount ? i.amount + " " : "") + i.name).join(" · ");
+  return `<div class="ckrow" data-ck="${c.slug}">
+    ${img ? `<img src="${img}" alt="">` : `<div class="ckph"></div>`}
+    <div class="ckmeta"><b>${ckTitle(c)}</b><span class="ing">${line}</span></div>
+    <span class="chev">›</span>
+  </div>`;
+}
+function viewCocktails(){
+  const items = ckFiltered();
+  const parts = [];
+  parts.push(`<div class="cksearch"><span>&#128269;</span><input id="ckq" placeholder="Поиск: название или ингредиент" value="${state.ckQuery || ""}"></div>`);
+  parts.push(`<div class="lead"><h3>Официальные коктейли IBA</h3>
+    <p>102 рецепта Международной ассоциации барменов: состав, метод и история. У легендарных коктейлей — блок «Мифы и истории».</p></div>`);
+  parts.push(`<div class="ckcat">${(state.ckQuery || "").trim() ? "НАЙДЕНО" : "ПО АЛФАВИТУ"} <em>${items.length}</em></div>`);
+  if (!items.length) parts.push(`<div class="note">Ничего не нашлось.</div>`);
+  else parts.push(items.map(ckRow).join(""));
+  return parts.join("");
+}
+function viewCocktailDetail(slug){
+  const c = ckList().find(x => x.slug === slug);
+  if (!c) return `<div class="note">Коктейль не найден.</div>`;
+  const img = ckImg(c.slug);
+  const ings = c.ingredients.map(i =>
+    `<div class="ingrow"><span class="nm">${i.name}</span>${i.amount ? `<span class="am">${i.amount}</span>` : ""}</div>`).join("");
+  const method = c.method.map((m, i) =>
+    `<div class="ckstep"><span class="ckn">${i+1}</span><span>${m}</span></div>`).join("");
+  const myths = (c.myths && c.myths.length)
+    ? `<div class="ckblock ckmyth"><button class="cktoggle" data-ckmyth="1">
+         <span class="ic">&#10024;</span>
+         <span class="tx"><b>Мифы и истории</b><em>Легенды и что говорят документы</em></span>
+         <span class="ar">${state.ckMyth ? "▴" : "▾"}</span></button>
+       ${state.ckMyth ? `<div class="mythbody">${c.myths.map(m => `<div class="mrow"><span>&#10067;</span><span>${m}</span></div>`).join("")}</div>` : ""}
+       </div>`
+    : "";
+  return `<button class="ckback" data-ckback="1">‹ К списку коктейлей</button>
+    ${img ? `<img class="ckhero" src="${img}" alt="">` : ""}
+    <div class="ckhead"><b>${c.nameEn}</b><span class="en">${c.name}</span>
+      <span class="ckchip">${ckCatTitle(c.cat)}</span></div>
+    <div class="ckblock"><h4>Состав</h4>${ings}</div>
+    <div class="ckblock"><h4>Приготовление</h4>${method}</div>
+    ${c.garnish ? `<div class="ckblock"><h4>Гарнир</h4><div class="cktext">${c.garnish}</div></div>` : ""}
+    <div class="ckblock"><h4>История</h4><div class="cktext">${c.history}</div></div>
+    ${myths}
+    <div class="cksrc">Источники: ${(c.sources && c.sources.length ? c.sources.join(" · ") : "Международная ассоциация барменов (IBA)")}</div>`;
+}
+
+
 /* --- взаимодействие --- */
 document.addEventListener("click", e => {
   const t = e.target;
 
+  const ckBack = t.closest("[data-ckback]");
+  if (ckBack){ state.ckDetail = null; state.ckMyth = false; render(); return; }
+
+  const ckMythEl = t.closest("[data-ckmyth]");
+  if (ckMythEl){ state.ckMyth = !state.ckMyth; render(); return; }
+
+  const ckRowEl = t.closest("[data-ck]");
+  if (ckRowEl){ state.ckDetail = ckRowEl.dataset.ck; state.ckMyth = false; render(); return; }
+
   const tab = t.closest(".tab");
-  if (tab){ state.tab = Number(tab.dataset.tab); render(); return; }
+  if (tab){ state.tab = Number(tab.dataset.tab); state.ckDetail = null; state.ckMyth = false; render(); return; }
 
   const step = t.closest("[data-step]");
   if (step){
@@ -1277,6 +1410,11 @@ document.addEventListener("input", e => {
     if (masked !== val) e.target.value = masked;
   }
   else if (id === "f-comment"){ state.comment = val; refreshSummary(); }
+  else if (id === "ckq"){
+    state.ckQuery = val; render();
+    const q = document.getElementById("ckq");
+    if (q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  }
 });
 
 /* перерисовываем только блок «Итог» — поля и фокус не трогаем */

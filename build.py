@@ -5,7 +5,7 @@ import datetime
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))          # ...\MosDomIce\GPT
+ROOT = os.path.dirname(HERE)                            # ...\MosDomIce\GPT
 ASSETS = os.path.join(ROOT, "ice-app", "Sources", "Resources", "Assets.xcassets")
 PHOTOS = ["lump", "frappe", "flake", "cups", "cube5", "stick", "glass-craft", "glass-darts", "dry"]
 
@@ -25,6 +25,21 @@ def calc_uri():
         return "data:image/png;base64," + base64.b64encode(f.read()).decode()
 
 
+WORK = os.path.join(ROOT, "work")
+
+
+def cocktail_images():
+    """102 фото коктейлей (облегчённые) как data-URI."""
+    import json
+    d = os.path.join(WORK, "ck", "img_demo")
+    out = {}
+    for fn in os.listdir(d):
+        if fn.endswith(".jpg"):
+            with open(os.path.join(d, fn), "rb") as f:
+                out[fn[:-4]] = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
+    return out
+
+
 def main():
     with open(os.path.join(HERE, "template.html"), encoding="utf-8") as f:
         html = f.read()
@@ -33,7 +48,13 @@ def main():
     logo = data_uri("logomark", "png")
     logo_dark = data_uri("logo", "png")
     calc = calc_uri()
+    import json
+    with open(os.path.join(ASSETS, "..", "cocktails.json"), encoding="utf-8") as f:
+        cocktails = f.read().strip()
+    ck_img = json.dumps(cocktail_images(), ensure_ascii=False)
     html = (html.replace("__IMG__", images)
+                .replace("__COCKTAILS__", cocktails)
+                .replace("__CK_IMG__", ck_img)
                 .replace("__LOGO__", logo)
                 .replace("__LOGO_DARK__", logo_dark)
                 .replace("__CALC__", calc)
