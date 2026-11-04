@@ -1,14 +1,14 @@
 {
   "android": {
-    "versionCode": 2,
-    "versionName": "1.1",
+    "versionCode": 3,
+    "versionName": "1.2",
     "url": "https://hairack.github.io/mosdomice-ice-demo/ice-order-android.apk",
-    "notes": "Коктейли: расширенные истории и раздел «Мифы», исправления калькулятора и адреса."
+    "notes": "Выпуск 1.2. Автоматическая проверка обновлений, установка поверх текущей версии, страница обновления для iPhone. История заказов сохраняется."
   },
   "ios": {
-    "build": 2,
-    "version": "1.1",
+    "build": 3,
+    "version": "1.2",
     "url": "https://hairack.github.io/mosdomice-ice-demo/update.html",
-    "notes": "Коктейли: расширенные истории и раздел «Мифы»."
+    "notes": "Выпуск 1.2. Автоматическая проверка обновлений и предложение обновиться при запуске."
   }
 }
