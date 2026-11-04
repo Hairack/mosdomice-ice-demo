@@ -1704,16 +1704,19 @@ function setTheme(v){
   var note = document.getElementById("apppopNote");
 
   /* Определяем платформу посетителя: на Android предлагаем только Android,
-     на iPhone/iPad — только iPhone. На компьютере показываем оба варианта. */
+     на iPhone/iPad блок не показываем вообще. На компьютере — оба варианта. */
   var ua = navigator.userAgent || "";
   var isIOS = /iPad|iPhone|iPod/.test(ua) ||
               (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   var isAndroid = /Android/i.test(ua);
 
+  if (isIOS) {
+    pop.remove();
+    return;
+  }
+
   if (isAndroid && btnIOS) {
     btnIOS.remove();
-  } else if (isIOS && btnAndroid) {
-    btnAndroid.remove();
   }
 
   var shown = false;
