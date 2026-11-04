@@ -938,14 +938,25 @@ function viewCatalog(){
   return parts.join("");
 }
 
-/* точечно обновляем одну карточку — скролл и остальные карточки не трогаем */
+/* точечно обновляем одну карточку — скролл и остальные карточки не трогаем.
+   ВАЖНО: узел карточки НЕ заменяем (replaceWith на Android WebView сбрасывал
+   прокрутку в начало) — обновляем содержимое того же самого элемента. */
 function refreshCatalogCard(id){
   const p = PRODUCTS.find(x => x.id === id);
   const node = document.querySelector('[data-card="' + id + '"]');
   if (!p || !node) return false;
+  const sc = document.getElementById("scroll");
+  const keepTop = sc ? sc.scrollTop : 0;
   const tmp = document.createElement("div");
   tmp.innerHTML = catalogCard(p);
-  node.replaceWith(tmp.firstElementChild);
+  const fresh = tmp.firstElementChild;
+  if (fresh){
+    node.className = fresh.className;
+    node.innerHTML = fresh.innerHTML;
+  }
+  /* возвращаем прежнюю позицию: WebView не должен «уезжать» в начало списка */
+  if (sc) sc.scrollTop = keepTop;
+  requestAnimationFrame(() => { if (sc) sc.scrollTop = keepTop; });
   const st = document.getElementById("catstat");
   if (st){ st.textContent = catalogStatsText(); st.hidden = !lines().length; }
   refreshBadge();
@@ -1045,9 +1056,8 @@ function viewOrder(){
       <div class="field"><span class="ico">◉</span>
         <input id="f-address" placeholder="Адрес доставки" autocomplete="off" value="${state.address}">
         <button class="mini-btn" id="geo">Я здесь</button></div>
-      ${addrHint()}
-      ${kmHint()}
-      ${venueHint()}
+      <div id="addrbox">${addrHint()}</div>
+      <div id="hintsbox">${kmHint()}${venueHint()}</div>
       <div class="field"><span class="ico">✆</span>
         <input id="f-phone" type="tel" inputmode="tel" maxlength="18" placeholder="+7 (___) ___-__-__" value="${state.phone}"></div>
       <div class="field" style="margin-bottom:0"><span class="ico">▤</span>
@@ -1296,7 +1306,11 @@ document.addEventListener("click", e => {
   }
 
   const more = t.closest("[data-more]");
-  if (more){ state.expanded[more.dataset.more] = !state.expanded[more.dataset.more]; render(true); return; }
+  if (more){
+    state.expanded[more.dataset.more] = !state.expanded[more.dataset.more];
+    if (state.tab === 0 && refreshCatalogCard(more.dataset.more)) return;
+    render(true); return;
+  }
 
   if (t.closest("[data-clear]")){ state.qty = {}; render(); return; }
   if (t.closest("[data-history]")){ viewHistory(); return; }
@@ -1515,7 +1529,7 @@ function locateMe(){
 /* варианты адреса по карте: показываем все совпадения, человек выбирает точный */
 async function suggestAddress(){
   const q = state.address.trim();
-  if (q.length < 5){ state.addrOpen = false; state.addrOptions = []; render(true); return; }
+  if (q.length < 5){ state.addrOpen = false; state.addrOptions = []; refreshOrderHints(); return; }
   try {
     const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=7&addressdetails=1"
       + "&accept-language=ru&q=" + encodeURIComponent(q);
@@ -1528,7 +1542,9 @@ async function suggestAddress(){
   } catch (_) {
     state.addrOptions = []; state.addrOpen = false;
   }
-  render(true);
+  /* не пересобираем весь экран: иначе поле адреса создаётся заново,
+     теряет фокус и клавиатура закрывается прямо во время ввода */
+  refreshOrderHints();
 }
 
 /* человек выбрал точный адрес из списка: считаем доставку и ищем заведения */
@@ -1572,7 +1588,8 @@ async function locateAddress(){
 /* ищем заведения рядом с точкой: скидку включает только выбор из списка */
 async function checkVenue(lat, lon){
   const wasSelected = state.venue;
-  state.venueStatus = "searching"; state.venues = []; state.venueListOpen = true; render();
+  state.venueStatus = "searching"; state.venues = []; state.venueListOpen = true;
+  if (state.tab === 1) refreshOrderHints(); else render();
   const list = await findVenues(lat, lon);
   state.venues = list || [];
   if (!state.venues.length) {
@@ -1583,7 +1600,7 @@ async function checkVenue(lat, lon){
     if (wasSelected && !state.venues.some(v => venueTitle(v) === wasSelected)) state.venue = null;
     state.venueStatus = "results";
   }
-  render();
+  if (state.tab === 1) refreshOrderHints(); else render();
 }
 
 /* Enter в поле адреса — берём лучший вариант из подсказок */
@@ -1624,6 +1641,16 @@ document.addEventListener("input", e => {
   }
 });
 
+/* адресные подсказки и заведения: обновляем только свои блоки,
+   поле адреса и клавиатуру не трогаем */
+function refreshOrderHints(){
+  const a = document.getElementById("addrbox");
+  if (a) a.innerHTML = addrHint();
+  const h = document.getElementById("hintsbox");
+  if (h) h.innerHTML = kmHint() + venueHint();
+  refreshSummary();
+}
+
 /* перерисовываем только блок «Итог» — поля и фокус не трогаем */
 function refreshSummary(){
   const node = document.getElementById("sumsec");
@@ -1631,7 +1658,7 @@ function refreshSummary(){
   const tmp = document.createElement("div");
   tmp.innerHTML = summaryBlock();
   const fresh = tmp.querySelector("#sumsec");
-  if (fresh) node.replaceWith(fresh);
+  if (fresh){ node.className = fresh.className; node.innerHTML = fresh.innerHTML; }
 }
 
 /* живое обновление итога, когда меняются данные доставки */
