@@ -879,6 +879,7 @@ function render(keepScroll){
   else if (state.tab === 2) v.innerHTML = viewContacts();
   else if (state.ckDetail) v.innerHTML = viewCocktailDetail(state.ckDetail);
   else v.innerHTML = viewCocktails();
+  if (state.tab === 2) refreshUpdateSection();
   if (sc) sc.scrollTop = keepTop;
 }
 
@@ -1128,11 +1129,30 @@ function viewContacts(){
         <div class="ver">Московский Дом Бармена (MosDomIce)</div></div>
     </div>
 
+    <div class="sec" id="updsec" hidden><h4>Обновление приложения</h4>
+      <button class="crow updbtn" type="button" id="updcheck" style="width:100%;background:none;border:0;font:inherit;color:inherit;text-align:left;cursor:pointer">
+        <span class="ico">↻</span><div><b>Проверить обновление</b><span id="updver">версия приложения</span></div><span class="chev">›</span>
+      </button>
+    </div>
+
     <div style="text-align:center;padding:14px 0 4px">
       <a href="#" data-privacy style="color:rgba(255,255,255,.45);font-size:11.5px;text-decoration:underline">Политика конфиденциальности</a>
     </div>`;
 }
 
+
+/* Раздел «Обновление приложения» показываем только внутри приложения
+   для Android — на сайте и в эмуляторе он не нужен. */
+function refreshUpdateSection(){
+  const sec = document.getElementById("updsec");
+  if (!sec) return;
+  const inApp = (typeof Android !== "undefined" && Android && Android.checkUpdates);
+  sec.hidden = !inApp;
+  if (inApp){
+    const v = document.getElementById("updver");
+    if (v) v.textContent = "версия " + (window.__APP_VERSION__ || "приложения");
+  }
+}
 
 /* История заказов: последние сверху, можно посмотреть и очистить целиком. */
 function saveHistory(text){
@@ -1335,6 +1355,11 @@ document.addEventListener("click", e => {
   if (themeBtn){ setTheme(themeBtn.dataset.themeBtn); return; }
 
   if (t.closest("[data-privacy]")){ e.preventDefault(); showPrivacy(); return; }
+
+  if (t.closest("#updcheck")){
+    if (typeof Android !== "undefined" && Android && Android.checkUpdates) Android.checkUpdates();
+    return;
+  }
 
   const arow = t.closest("[data-addr]");
   if (arow){

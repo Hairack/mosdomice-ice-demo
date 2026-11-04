@@ -2,6 +2,7 @@
 """Сборка эмулятора приложения «Лёд MosDomIce»: подставляет фото из приложения."""
 import base64
 import datetime
+import io
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -81,6 +82,70 @@ def cocktail_images():
     return out
 
 
+def sync_version_manifest():
+    """Собирает version.json из версий обоих приложений.
+
+    Приложение на телефоне сравнивает свой номер сборки с этим файлом и
+    предлагает обновиться, когда сборка на сайте новее.
+    """
+    import re
+
+    android_code, android_name = 1, "1.0"
+    android_file = os.path.join(ROOT, "ice-android", "app", "build.gradle.kts")
+    try:
+        g = io.open(android_file, encoding="utf-8").read()
+        m = re.search(r"versionCode\s*=\s*(\d+)", g)
+        if m:
+            android_code = int(m.group(1))
+        m = re.search(r'versionName\s*=\s*"([^"]+)"', g)
+        if m:
+            android_name = m.group(1)
+    except Exception:
+        pass
+
+    ios_build, ios_name = 1, "1.0"
+    ios_file = os.path.join(ROOT, "ice-app", "project.yml")
+    try:
+        y = io.open(ios_file, encoding="utf-8").read()
+        m = re.search(r'CFBundleVersion:\s*"?(\d+)"?', y)
+        if m:
+            ios_build = int(m.group(1))
+        m = re.search(r'CFBundleShortVersionString:\s*"([^"]+)"', y)
+        if m:
+            ios_name = m.group(1)
+    except Exception:
+        pass
+
+    path = os.path.join(HERE, "version.json")
+    notes = {"android": "", "ios": ""}
+    try:
+        import json as _json
+        old = _json.load(io.open(path, encoding="utf-8"))
+        notes["android"] = (old.get("android") or {}).get("notes", "")
+        notes["ios"] = (old.get("ios") or {}).get("notes", "")
+    except Exception:
+        pass
+
+    import json
+    data = {
+        "android": {
+            "versionCode": android_code,
+            "versionName": android_name,
+            "url": "https://hairack.github.io/mosdomice-ice-demo/" + APK_NAME,
+            "notes": notes["android"],
+        },
+        "ios": {
+            "build": ios_build,
+            "version": ios_name,
+            "url": "https://hairack.github.io/mosdomice-ice-demo/update.html",
+            "notes": notes["ios"],
+        },
+    }
+    io.open(path, "w", encoding="utf-8", newline="\n").write(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    print("version.json: android %s(%d), ios %s(%d)" % (android_name, android_code, ios_name, ios_build))
+
+
 def main():
     with open(os.path.join(HERE, "template.html"), encoding="utf-8") as f:
         html = f.read()
@@ -107,6 +172,7 @@ def main():
     with open(os.path.join(HERE, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     print("эмулятор собран:", os.path.join(HERE, "index.html"))
+    sync_version_manifest()
 
 
 if __name__ == "__main__":
